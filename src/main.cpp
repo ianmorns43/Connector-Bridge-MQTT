@@ -15,10 +15,10 @@ ConnectorUdp udp;
 void setup()
 {
   Serial.begin(9600);
+  Serial.println();
 
   pinMode(LED_BUILTIN, OUTPUT);
-
-  Serial.println();
+  
   Serial.println("Connecting to WIFI...");
   
   wifi_station_set_hostname(MQTT_TOPIC);
