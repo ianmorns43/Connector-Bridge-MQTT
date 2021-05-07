@@ -6,7 +6,8 @@
 class AccessTokenGenerator
 {
     public:
-    const char* getToken(const char* key, const char* token);
+    void setToken(const char* token);
+    const char* getAccessToken(const char* key);
 
     private:
 

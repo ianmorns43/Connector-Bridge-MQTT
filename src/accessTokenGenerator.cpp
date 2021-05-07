@@ -388,16 +388,26 @@ void mgAesDecrypt(uint8_t *in,uint8_t*out,uint8_t *key, int length)
     AES_Decrypt(out, in, length);
 }
 
-const char* AccessTokenGenerator::getToken(const char* key, const char* token)
+const char* AccessTokenGenerator::getAccessToken(const char* key)
 {
-    if(lastKey != key || lastToken != token)
+    if(lastKey != key || !accessToken.empty())
     {
+        lastKey = key;
         char temp[17] = {0};
         uint8_t O[16];
-        mgAesEncrypt((uint8_t *)token, O, (uint8_t *)key, 16);
+        mgAesEncrypt((uint8_t *)lastToken.c_str(), O, (uint8_t *)key, 16);
         sprintf(temp,"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", O[0],O[1],O[2],O[3],O[4],O[5],O[6],O[7],O[8],O[9],O[10],O[11],O[12],O[13],O[14],O[15]);
-        accessToken.erase();
-        accessToken.replace(0, 16, temp);
+        accessToken = std::string(temp);
     }
     return accessToken.c_str();
+}
+
+void AccessTokenGenerator::setToken(const char* token)
+{
+    if(lastToken != token)
+    {
+        accessToken.erase();
+        lastKey.erase();
+        lastToken = token;
+    }
 }
