@@ -1,4 +1,5 @@
 #include "connectorUdp.h"
+#include "ArduinoJson.h"
 
 //The code returned for different device types in Device List
 std::string ConnectorUdp::DeviceType::RFMotor = "10000000";
@@ -29,7 +30,7 @@ std::array<std::string, 14> ConnectorUdp::DeviceType::shadeTypes = {
     "Curtain(Open Right)"
 };
 
-typedef StaticJsonDocument<4048> JsonDocumentRoot;
+typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
 ConnectorUdp::ConnectorUdp()
     :multicastIP(238,0,0,18)
@@ -50,17 +51,19 @@ void ConnectorUdp::loop()
     if (packetSize)
     {
         Serial.printf("Received %d bytes\r\n", packetSize);
-        readBuffer.resize(packetSize);
-        udpSocket.read(readBuffer.data(), readBuffer.size());
-        Serial.printf("Read %d bytes from %s:%d, on %s:%d\n", readBuffer.size(), udpSocket.remoteIP().toString().c_str(), udpSocket.remotePort(), udpSocket.destinationIP().toString().c_str(), hubResponsePort);
+        messageBuffer.erase();
+        messageBuffer.reserve(packetSize);
 
+        for(auto i = 0; i < packetSize; i++)
+        {
+            messageBuffer.push_back(udpSocket.read());
+        }
 
-        udpSocket.flush();
-        auto message = std::string(readBuffer.data(), readBuffer.size());
-        Serial.println(message.c_str());
+        Serial.printf("Read %d bytes from %s:%d, on %s:%d\n", messageBuffer.size(), udpSocket.remoteIP().toString().c_str(), udpSocket.remotePort(), udpSocket.destinationIP().toString().c_str(), hubResponsePort);
+        //Serial.println(messageBuffer.c_str());
         
-        /*JsonDocumentRoot doc;
-        deserializeJson(doc, message);
+        JsonDocumentRoot doc;
+        auto error = deserializeJson(doc, messageBuffer);
         if(error)
         {
             Serial.printf("Error: %s\r\n", error.c_str());
@@ -158,7 +161,7 @@ void ConnectorUdp::loop()
             auto isBidirectional = data["wirelessMode"] == 1;
 
             Serial.printf("ReadDeviceAck: operation %d(=2?) deviceMac = %s, batteryLevel = %d, currentPosition = %d, rssi = %d, type = %s, is Bi-directional %d\r\n",operation, deviceMac.c_str(), batteryLevel, currentPosition, rssi, shadeType.c_str(), isBidirectional);
-        }*/
+        }
     }
 }
 

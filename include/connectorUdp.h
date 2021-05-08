@@ -23,7 +23,7 @@ class ConnectorUdp
     TimeStampGenerator timestamp;
     AccessTokenGenerator accessToken;
 
-    std::vector<char> readBuffer;
+    std::string messageBuffer;
 
     unsigned int hubResponsePort = 32101;  // port to listen on
     unsigned int sendPort = 32100;  // port to send on
