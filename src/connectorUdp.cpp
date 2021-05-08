@@ -91,6 +91,7 @@ void ConnectorUdp::loop()
                 if(DeviceType::RFMotor == deviceType)
                 {
                     auto deviceMac = (const char*) device["mac"];
+                    udpMessages.queueUnicastMessage(deviceStatusRequestMsg(deviceMac).c_str());
                     deviceList.push_back(deviceMac);
                 }
             }
@@ -166,13 +167,21 @@ void ConnectorUdp::sendMulticastDeviceListRequest()
     lastTimeDeviceListRequested = millis();
     deviceListReceived = false;
    
-    udpMessages.queueMulticastMessage(GetDeviceListMsg().c_str());
+    udpMessages.queueMulticastMessage(deviceListMsg().c_str());
 }
 
-std::string ConnectorUdp::GetDeviceListMsg()
+std::string ConnectorUdp::deviceListMsg()
 {
     std::ostringstream stream;
     stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << timestamp.Generate() << "\" }";
+
+    return stream.str();
+}
+
+std::string ConnectorUdp::deviceStatusRequestMsg(const char* deviceMac)
+{
+    std::ostringstream stream;
+    stream << "{ \"msgType\":\"ReadDevice\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << timestamp.Generate() << "\" }";
 
     return stream.str();
 }

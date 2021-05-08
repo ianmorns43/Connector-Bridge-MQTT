@@ -21,8 +21,8 @@ class udpMessageQueue
 
     private:
 
-    //The Dooya Connector Bridge documentation recommends leaving 100ms between messages sent to the bridge
-    const int delayBetweenMessagesMS = 100;
+    //The Dooya Connector Bridge documentation recommends leaving at least 100ms between messages sent to the bridge
+    const int delayBetweenMessagesMS = 500;
 
     WiFiUDP udpClient;
     IPAddress unicastIp;

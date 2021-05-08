@@ -29,7 +29,8 @@ class ConnectorUdp
     bool deviceListReceived = false;
     unsigned int lastTimeDeviceListRequested = 0;
 
-    std::string GetDeviceListMsg();
+    std::string deviceListMsg();
+    std::string deviceStatusRequestMsg(const char* deviceMac);
     /*if(!cmdSent)
     {
       const String posTo44 = "{\"msgType\":\"WriteDevice\",\"mac\":\"f008d1edd4ec0002\",\"deviceType\":\"10000000\",\"AccessToken\":\"***********\",\"msgID\":\"20210508144209916\",\"data\":{\"targetPosition\":44}}";
