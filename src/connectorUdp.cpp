@@ -10,6 +10,12 @@ std::string ConnectorUdp::DeviceType::WiFiReceiver = "22000005";
 
 std::string ConnectorUdp::DeviceType::ShadeTypeName(int type)
 {
+    Serial.printf("Type value: %d\r\n", type);
+    if(type < 1 || type > 14)
+    {
+        return "Unknown";
+    }
+    
     return shadeTypes[type-1];
 }
 
