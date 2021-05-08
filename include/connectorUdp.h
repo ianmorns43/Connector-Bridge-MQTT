@@ -1,12 +1,11 @@
 #ifndef CONNECTOR_UDP_H
 #define CONNECTOR_UDP_H
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
 #include <string>
 #include <vector>
 #include "timeStampGenerator.h"
 #include "accessTokenGenerator.h"
+#include "udpMessageQueue.h"
 
 class ConnectorUdp
 {
@@ -19,15 +18,10 @@ class ConnectorUdp
     void sendMulticastDeviceListRequest();
 
     private:
-    WiFiUDP udpSocket;
+    udpMessageQueue udpMessages;
+    
     TimeStampGenerator timestamp;
     AccessTokenGenerator accessToken;
-
-    std::string messageBuffer;
-
-    unsigned int hubResponsePort = 32101;  // port to listen on
-    unsigned int sendPort = 32100;  // port to send on
-    IPAddress multicastIP;
 
     IPAddress hubIp;
     std::string hubMac;

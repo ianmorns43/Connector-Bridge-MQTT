@@ -33,7 +33,6 @@ std::array<std::string, 14> ConnectorUdp::DeviceType::shadeTypes = {
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
 ConnectorUdp::ConnectorUdp()
-    :multicastIP(238,0,0,18)
 {
 }
 
@@ -41,32 +40,20 @@ void ConnectorUdp::start()
 {
     timestamp.start();
     //Listen for broadcast messages
-    udpSocket.beginMulticast(WiFi.localIP(), multicastIP, hubResponsePort);
-
+    udpMessages.beginListening();
+    
     deviceListReceived = false;
     lastTimeDeviceListRequested = millis();
 }
 
 void ConnectorUdp::loop()
 {
-    int packetSize = udpSocket.parsePacket();
+    auto packet = udpMessages.readNextIncomingPacket();
     
-    if (packetSize)
-    {
-        Serial.printf("Received %d bytes\r\n", packetSize);
-        messageBuffer.erase();
-        messageBuffer.reserve(packetSize);
-
-        for(auto i = 0; i < packetSize; i++)
-        {
-            messageBuffer.push_back(udpSocket.read());
-        }
-
-        Serial.printf("Read %d bytes from %s:%d, on %s:%d\n", messageBuffer.size(), udpSocket.remoteIP().toString().c_str(), udpSocket.remotePort(), udpSocket.destinationIP().toString().c_str(), hubResponsePort);
-        //Serial.println(messageBuffer.c_str());
-        
+    if (!packet.empty())
+    {       
         JsonDocumentRoot doc;
-        auto error = deserializeJson(doc, messageBuffer);
+        auto error = deserializeJson(doc, packet);
         if(error)
         {
             Serial.printf("Error: %s\r\n", error.c_str());
@@ -79,8 +66,6 @@ void ConnectorUdp::loop()
             auto token = std::string((const char *)doc["token"]);
             accessToken.setToken(token.c_str());
             hubMac = std::string((const char *)doc["mac"]);
-            hubIp = udpSocket.remoteIP();
-
             auto rssi = (int) (doc["data"])["RSSI"];
 
             Serial.printf("Heartbeat: token = %s, mac = %s, HubIp = %s, RSSI = %d\r\n", token.c_str(), hubMac.c_str(), hubIp.toString().c_str(), rssi);
@@ -92,8 +77,7 @@ void ConnectorUdp::loop()
             auto token = std::string((const char *)doc["token"]);
             accessToken.setToken(token.c_str());
             hubMac = std::string((const char *)doc["mac"]);
-            hubIp = udpSocket.remoteIP();
-
+            
             auto data = doc["data"];
 
             std::vector<std::string> deviceList;
@@ -104,7 +88,6 @@ void ConnectorUdp::loop()
                 auto device = data[i];
                 auto deviceType = (const char*)device["deviceType"];
 
-                Serial.printf("Device type: %s\r\n", deviceType);
                 if(DeviceType::RFMotor == deviceType)
                 {
                     auto deviceMac = (const char*) device["mac"];
@@ -172,17 +155,18 @@ void ConnectorUdp::loop()
         Serial.println("Asking hub to identify itself...");
         sendMulticastDeviceListRequest();
     }
+    else
+    {
+        udpMessages.sendNextMessage();
+    }
 }
 
 void ConnectorUdp::sendMulticastDeviceListRequest()
 {
     lastTimeDeviceListRequested = millis();
     deviceListReceived = false;
-    auto getDeviceList = GetDeviceListMsg();
-    Serial.println(getDeviceList.c_str());
-    udpSocket.beginPacket(multicastIP, sendPort);
-    udpSocket.write(getDeviceList.c_str(), getDeviceList.length());
-    udpSocket.endPacket();
+   
+    udpMessages.queueMulticastMessage(GetDeviceListMsg().c_str());
 }
 
 std::string ConnectorUdp::GetDeviceListMsg()
