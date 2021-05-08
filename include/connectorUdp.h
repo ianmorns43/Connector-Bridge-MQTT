@@ -32,6 +32,9 @@ class ConnectorUdp
     IPAddress hubIp;
     std::string hubMac;
 
+    bool deviceListReceived = false;
+    unsigned int lastTimeDeviceListRequested = 0;
+
     std::string GetDeviceListMsg();
     /*if(!cmdSent)
     {

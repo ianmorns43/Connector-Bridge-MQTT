@@ -42,6 +42,9 @@ void ConnectorUdp::start()
     timestamp.start();
     //Listen for broadcast messages
     udpSocket.beginMulticast(WiFi.localIP(), multicastIP, hubResponsePort);
+
+    deviceListReceived = false;
+    lastTimeDeviceListRequested = millis();
 }
 
 void ConnectorUdp::loop()
@@ -85,6 +88,7 @@ void ConnectorUdp::loop()
         }
         else if(messageType == "GetDeviceListAck")
         {
+            deviceListReceived = true;
             auto token = std::string((const char *)doc["token"]);
             accessToken.setToken(token.c_str());
             hubMac = std::string((const char *)doc["mac"]);
@@ -145,7 +149,7 @@ void ConnectorUdp::loop()
             auto shadeType = DeviceType::ShadeTypeName(data["type"]);
             auto isBidirectional = data["wirelessMode"] == 1;
 
-            Serial.printf("WriteDeviceAck: operation %d(=2?) deviceMac = %s, batteryLevel = %d, currentPosition = %d, rssi = %d, type = %s, is Bi-directional %d\r\n",operation, deviceMac.c_str(), batteryLevel, currentPosition, rssi, shadeType.c_str(), isBidirectional);
+            Serial.printf("Report: operation %d(=2?) deviceMac = %s, batteryLevel = %d, currentPosition = %d, rssi = %d, type = %s, is Bi-directional %d\r\n",operation, deviceMac.c_str(), batteryLevel, currentPosition, rssi, shadeType.c_str(), isBidirectional);
         }
         else if(messageType == "ReadDeviceAck") //When asked for
         {            
@@ -163,10 +167,17 @@ void ConnectorUdp::loop()
             Serial.printf("ReadDeviceAck: operation %d(=2?) deviceMac = %s, batteryLevel = %d, currentPosition = %d, rssi = %d, type = %s, is Bi-directional %d\r\n",operation, deviceMac.c_str(), batteryLevel, currentPosition, rssi, shadeType.c_str(), isBidirectional);
         }
     }
+    else if(!deviceListReceived && millis() > (lastTimeDeviceListRequested + 5000u))
+    {
+        Serial.println("Asking hub to identify itself...");
+        sendMulticastDeviceListRequest();
+    }
 }
 
 void ConnectorUdp::sendMulticastDeviceListRequest()
 {
+    lastTimeDeviceListRequested = millis();
+    deviceListReceived = false;
     auto getDeviceList = GetDeviceListMsg();
     Serial.println(getDeviceList.c_str());
     udpSocket.beginPacket(multicastIP, sendPort);

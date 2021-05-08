@@ -27,9 +27,6 @@ void setup()
 
   Serial.println("Opening UDP socket...");
   udp.start();
-
-  Serial.println("Asking hub to identify itself...");
-  udp.sendMulticastDeviceListRequest();
 }
 
 void loop() 
