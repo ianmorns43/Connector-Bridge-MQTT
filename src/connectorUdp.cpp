@@ -1,5 +1,4 @@
 #include "connectorUdp.h"
-#include "ArduinoJson.h"
 
 //The code returned for different device types in Device List
 std::string ConnectorUdp::DeviceType::RFMotor = "10000000";
