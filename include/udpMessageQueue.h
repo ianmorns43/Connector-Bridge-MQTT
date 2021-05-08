@@ -19,6 +19,8 @@ class udpMessageQueue
     void queueMulticastMessage(const char* body);
     bool sendNextMessage();
 
+    IPAddress getUnicastIp();
+
     private:
 
     //The Dooya Connector Bridge documentation recommends leaving at least 100ms between messages sent to the bridge

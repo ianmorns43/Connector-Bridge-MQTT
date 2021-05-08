@@ -23,7 +23,6 @@ class ConnectorUdp
     TimeStampGenerator timestamp;
     AccessTokenGenerator accessToken;
 
-    IPAddress hubIp;
     std::string hubMac;
 
     bool deviceListReceived = false;

@@ -68,7 +68,7 @@ void ConnectorUdp::loop()
             hubMac = std::string((const char *)doc["mac"]);
             auto rssi = (int) (doc["data"])["RSSI"];
 
-            Serial.printf("Heartbeat: token = %s, mac = %s, HubIp = %s, RSSI = %d\r\n", token.c_str(), hubMac.c_str(), hubIp.toString().c_str(), rssi);
+            Serial.printf("Heartbeat: token = %s, mac = %s, HubIp = %s, RSSI = %d\r\n", token.c_str(), hubMac.c_str(), udpMessages.getUnicastIp().toString().c_str(), rssi);
         
         }
         else if(messageType == "GetDeviceListAck")
@@ -96,7 +96,7 @@ void ConnectorUdp::loop()
                 }
             }
 
-            Serial.printf("GetDeviceListAck: token = %s, mac = %s, HubIp = %s, Device count = %d\r\n", token.c_str(), hubMac.c_str(), hubIp.toString().c_str(), deviceList.size());
+            Serial.printf("GetDeviceListAck: token = %s, mac = %s, HubIp = %s, Device count = %d\r\n", token.c_str(), hubMac.c_str(), udpMessages.getUnicastIp().toString().c_str(), deviceList.size());
             Serial.print("MACs: ");
             for(auto it = deviceList.begin(); it != deviceList.end(); ++it)
             {

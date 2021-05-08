@@ -13,6 +13,11 @@ void udpMessageQueue::beginListening()
     udpClient.beginMulticast(WiFi.localIP(), multicastIp, listenPort);
 }
 
+IPAddress udpMessageQueue::getUnicastIp()
+{
+    return unicastIp;
+}
+
 void udpMessageQueue::queueUnicastMessage(const char* body)
 {
     //TODO: we cant send unicast messages until we know the IP address of the Hub
