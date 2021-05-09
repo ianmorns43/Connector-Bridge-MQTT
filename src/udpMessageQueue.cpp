@@ -50,10 +50,11 @@ bool udpMessageQueue::sendNextMessage()
     {
         return false;
     }
+    dontSendBeforeMillis = millis() + delayBetweenMessagesMS;
 
     auto message = messageQueue.front();
-    auto success = message->send(udpClient);
-    dontSendBeforeMillis = millis() + delayBetweenMessagesMS;
+
+    auto success = message->send(udpClient, timestamp.Generate());
     if(success)
     {
         messageQueue.pop();
@@ -104,7 +105,7 @@ void udpMessageQueue::queueMulticastDeviceListRequest()
 std::string udpMessageQueue::deviceListMsg()
 {
     std::ostringstream stream;
-    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << timestamp.Generate() << "\" }";
+    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\" }";
 
     return stream.str();
 }
@@ -112,7 +113,7 @@ std::string udpMessageQueue::deviceListMsg()
 std::string udpMessageQueue::deviceStatusRequestMsg(const char* deviceMac)
 {
     std::ostringstream stream;
-    stream << "{ \"msgType\":\"ReadDevice\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << timestamp.Generate() << "\" }";
+    stream << "{ \"msgType\":\"ReadDevice\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\" }";
 
     return stream.str();
 }
