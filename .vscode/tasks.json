@@ -1,0 +1,34 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+		{
+			"label": "Hubitat: Upload current to Dev-Hub",
+			"type": "shell",
+			"command": "${config:python.pythonPath}",
+			"args": [
+				"'${workspaceFolder}/../SmartThingsPrivate/Hubitat/utils/update.py'",
+				"--hub",
+				"development",
+				"-s",
+				"'${file}'"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Hubitat: Upload current to Production-Hub",
+			"type": "shell",
+			"command": "${config:python.pythonPath}",
+			"args": [
+				"'${workspaceFolder}/../SmartThingsPrivate/Hubitat/utils/update.py'",
+				"--hub",
+				"production",
+				"-s",
+				"'${file}'"
+			],
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}
