@@ -1,0 +1,40 @@
+Topics
+publishes:
+dooya_connector_hub/lwt                         <"online"|"offline">
+dooya_connector_hub/status/<hubMac>             {deviceCount:<deviceCount>, rssi:<hub rssi>}
+dooya_connector_hub/status/<hubMac>/<deviceMac> {updateType:"<commandSent|commandReceived|moveComplete|updateRequested>", 
+                                                 bidirectional:<is biderectional (bool)>,
+                                                 targetPosition¹:<position (%)>
+                                                 position²:<position (%)>, 
+                                                 shadeType²:"<Roller Blinds|Roman Blinds etc...>", 
+                                                 battery²:<battery voltage (V)>, 
+                                                 rssi²:<rssi>}
+
+¹ commandSent update type only
+² for bi-directional blinds only
+
+Subscribes to:
+dooya_connector_hub/command                     {command:"updateDeviceList", mac:"<hubMac>"}
+                                                {command:"moveShade", mac:"<deviceMac>", position:<newPosition>}
+                                                {command:"openShade", mac:"<deviceMac>"}
+                                                {command:"clodeShade", mac:"<deviceMac>"}
+                                                {command:"updateDevce", mac:"<deviceMac>"}
+
+commands:
+updateDeviceList
+    Bridge will publish:
+        a hub status update message
+        followed by a device status update message of type "updateRequested" for each device
+    
+moveShade
+openShade
+closeShade
+    Bridge will send the appropriate movement message to the hub
+    Bridge a device update messsage of type commandSent
+
+    for bi-directional blinds only
+    Bridge will publish a device status update message of type "commandReceived" when shade acknowledges command
+    Bridge will publish a device staus update message of type "moveComplete" when shade completes its move 
+    
+updateDevce
+    Bridge will publish a status update message of type "updateRequested"
