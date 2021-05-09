@@ -18,18 +18,24 @@ class udpMessageQueue
     const std::string& readNextIncomingPacket();
     bool sendNextMessage();
 
-    void queueUnicastMessage(const char* body);
-    void queueMulticastMessage(const char* body);
+
     void queueMulticastDeviceListRequest();
     void queueDeviceStatusRequest(const char* deviceMac);
+    void queueSetPositionRequest(const char* key, const char* deviceMac, int newPosition);
+    void queueOpenRequest(const char* key, const char* deviceMac);
+    void queueCloseRequest(const char* key, const char* deviceMac);
+    void queueStopRequest(const char* key, const char* deviceMac);
 
     IPAddress getUnicastIp();
     void setHubToken(const char* token);
 
     private:
 
-    std::string deviceListMsg();
-    std::string deviceStatusRequestMsg(const char* deviceMac);
+    void queueUnicastMessage(const char* body);
+    void queueMulticastMessage(const char* body);
+    std::string queueDeviceOperationMessage(const char* key, const char* deviceMac, int operation);
+    std::string basicDeviceMessage(const char* msgType, const char* deviceMac);
+    std::string deviceMessageWithAccessToken(const char* msgType, const char* key, const char* deviceMac);
 
     TimeStampGenerator timestamp;
     AccessTokenGenerator accessToken;

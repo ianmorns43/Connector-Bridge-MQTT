@@ -15,10 +15,11 @@ dooya_connector_hub/status/<deviceMac>          {updateType:"<commandSent|comman
 
 Subscribes to:
 dooya_connector_hub/command                     {command:"updateDeviceList", mac:"<hubMac>"}
-                                                {command:"moveShade", mac:"<deviceMac>", position:<newPosition>}
-                                                {command:"openShade", mac:"<deviceMac>"}
-                                                {command:"clodeShade", mac:"<deviceMac>"}
-                                                {command:"updateDevce", mac:"<deviceMac>"}
+                                                {command:"moveShade", mac:"<deviceMac>", key:"<hub-secret-key>", position:<newPosition>}
+                                                {command:"openShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                                {command:"closeShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                                {command:"stopShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                                {command:"updateDevce", mac:"<deviceMac>", key:"<hub-secret-key>"}
 
 commands:
 updateDeviceList
@@ -29,6 +30,7 @@ updateDeviceList
 moveShade
 openShade
 closeShade
+stopShade
     Bridge will send the appropriate movement message to the hub
     Bridge a device update messsage of type commandSent
 

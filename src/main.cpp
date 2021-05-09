@@ -13,7 +13,6 @@ enum READ_WRITE{Write=HIGH, Read=LOW};
 
 udpMessageQueue udpMessages;
 ConnectorUdp udp(udpMessages);
-ConnectorMqttClient mqttClient;
 
 void setup()
 {
@@ -29,8 +28,8 @@ void setup()
   wifimanager.autoConnect(MQTT_TOPIC);
 
   Serial.println("Connecting to mqtt broker");
-  mqttClient.setup();
-  
+  ConnectorMqttClient::setup(udpMessages);
+
   Serial.println("Opening UDP socket...");
   udpMessages.beginListening();
   udp.start();
@@ -40,5 +39,5 @@ void setup()
 void loop() 
 {
   udp.loop();
-  mqttClient.loop();
+  ConnectorMqttClient::loop();
 }

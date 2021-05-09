@@ -92,28 +92,62 @@ const std::string& udpMessageQueue::readNextIncomingPacket()
     return messageBuffer;
 }
 
+void udpMessageQueue::queueMulticastDeviceListRequest()
+{
+    std::ostringstream stream;
+    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\" }";  
+    queueMulticastMessage(stream.str().c_str());
+}
+
 void udpMessageQueue::queueDeviceStatusRequest(const char* deviceMac)
 {
-    queueUnicastMessage(deviceStatusRequestMsg(deviceMac).c_str());
+    std::ostringstream stream;
+    stream << "{" << basicDeviceMessage("ReadDevice", deviceMac) <<"}";
+    queueUnicastMessage(stream.str().c_str());
 }
 
-void udpMessageQueue::queueMulticastDeviceListRequest()
-{  
-    queueMulticastMessage(deviceListMsg().c_str());
+void udpMessageQueue::queueSetPositionRequest(const char* key, const char* deviceMac, int newPosition)
+{
+    //Dooya: setting position 0 opens the blind and position 100 closes it
+    //Alexa: setting position 100 opens the blind and position 0 closes it
+    //We need to inver the position we are asking for so Dooya blind does what Alexa tells it to
+    std::ostringstream stream;
+    stream << "{" << deviceMessageWithAccessToken("WriteDevice", key, deviceMac) << ",\"data\":{\"targetPosition\":" << 100-newPosition << "}}";
+    queueUnicastMessage(stream.str().c_str());
 }
 
-std::string udpMessageQueue::deviceListMsg()
+void udpMessageQueue::queueOpenRequest(const char* key, const char* deviceMac)
+{
+    queueDeviceOperationMessage(key, deviceMac, 1);
+}
+
+void udpMessageQueue::queueCloseRequest(const char* key, const char* deviceMac)
+{
+    queueDeviceOperationMessage(key, deviceMac, 0);
+}
+
+void udpMessageQueue::queueStopRequest(const char* key, const char* deviceMac)
+{
+    queueDeviceOperationMessage(key, deviceMac, 2);
+}
+    
+std::string udpMessageQueue::queueDeviceOperationMessage(const char* key, const char* deviceMac, int operation)
 {
     std::ostringstream stream;
-    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\" }";
-
-    return stream.str();
+    stream << "{" << deviceMessageWithAccessToken("WriteDevice", key, deviceMac) << ",\"data\":{\"operation\":" << operation << "}}";
+    queueUnicastMessage(stream.str().c_str());
 }
 
-std::string udpMessageQueue::deviceStatusRequestMsg(const char* deviceMac)
+std::string udpMessageQueue::basicDeviceMessage(const char* msgType, const char* deviceMac)
 {
     std::ostringstream stream;
-    stream << "{ \"msgType\":\"ReadDevice\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\" }";
-
-    return stream.str();
+    stream << "\"msgType\":\"" << msgType << "\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\"";
 }
+
+std::string udpMessageQueue::deviceMessageWithAccessToken(const char* msgType, const char* key, const char* deviceMac)
+{
+    std::ostringstream stream;
+    stream << basicDeviceMessage("ReadDevice", deviceMac) << "\",\"AccessToken\":\"" << accessToken.getAccessToken(key) << "\"";
+}
+
+

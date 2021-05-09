@@ -7,6 +7,8 @@ WiFiClient ConnectorMqttClient::espClient;
 PubSubClient ConnectorMqttClient::mqttClient(espClient);
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
+udpMessageQueue* ConnectorMqttClient::messageQueue = nullptr;
+
 void ConnectorMqttClient::publishStatus(const char* topic, const char* payload)
 {
     std::ostringstream stream;
@@ -81,35 +83,62 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     auto command = std::string(command_ptr);
     if(command == "updateDeviceList")
     {
-        //TODO Send update device list message
+        messageQueue->queueMulticastDeviceListRequest();
+    }
+    else if(command == "updateDevice")
+    {
+        messageQueue->queueDeviceStatusRequest(mac);
     }
     else if(command == "moveShade")
     {
         auto position_ptr = doc["position"];
-        if(position_ptr == nullptr || mac == nullptr)
+        auto key_ptr = doc["key"];
+        if(position_ptr == nullptr || mac == nullptr || key_ptr == nullptr)
         {
             //TOOD publish and error message
             return;
         }
-        auto position = (int) position_ptr;
-        //TODO Send change position message
+
+        messageQueue->queueSetPositionRequest((const char*)key_ptr, mac, (int) position_ptr);
     }
     else if(command == "open")
     {
-        //TODO send open massage
+        auto key_ptr = doc["key"];
+        if(mac == nullptr || key_ptr == nullptr)
+        {
+            //TOOD publish and error message
+            return;
+        }
+
+        messageQueue->queueOpenRequest((const char*)key_ptr, mac);
     }
     else if(command == "close")
     {
-        //TODO send close message
+        auto key_ptr = doc["key"];
+        if(mac == nullptr || key_ptr == nullptr)
+        {
+            //TOOD publish and error message
+            return;
+        }
+
+        messageQueue->queueCloseRequest((const char*)key_ptr, mac);
     }
-    else if(command == "updateDevice")
+    else if(command == "stop")
     {
-        //Todo send read device message
+        auto key_ptr = doc["key"];
+        if(mac == nullptr || key_ptr == nullptr)
+        {
+            //TOOD publish and error message
+            return;
+        }
+
+        messageQueue->queueStopRequest((const char*)key_ptr, mac);
     }
 }
 
-void ConnectorMqttClient::setup()
+void ConnectorMqttClient::setup(udpMessageQueue& messageQueueRef)
 {           
+    messageQueue = &messageQueueRef;
     mqttClient.setServer(MQTT_BROKER_IP, 1883);
     mqttClient.setCallback(mqttCallback);
     mqttClient.setBufferSize(2048);
