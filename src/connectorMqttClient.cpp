@@ -9,13 +9,6 @@ typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
 udpMessageQueue* ConnectorMqttClient::messageQueue = nullptr;
 
-void ConnectorMqttClient::publishStatus(const char* topic, const char* payload)
-{
-    std::ostringstream stream;
-    stream << MQTT_TOPIC << "/status/" << topic;
-    mqttClient.publish(stream.str().c_str(), payload);
-}
-
 void ConnectorMqttClient::mqttConnect()
 {
     std::ostringstream lwtTopic;
@@ -74,7 +67,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     auto command_ptr = (const char*) doc["command"];
     auto mac = (const char*) doc["mac"];
 
-    if(command_ptr == nullptr || mac == nullptr)
+    if(command_ptr == nullptr)
     {
         //TOOD publish and error message
         return;
@@ -87,6 +80,11 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     }
     else if(command == "updateDevice")
     {
+        if(mac == nullptr)
+        {
+            //TOOD publish and error message
+            return;
+        }
         messageQueue->queueDeviceStatusRequest(mac);
     }
     else if(command == "moveShade")

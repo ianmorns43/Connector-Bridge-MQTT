@@ -131,7 +131,7 @@ void udpMessageQueue::queueStopRequest(const char* key, const char* deviceMac)
     queueDeviceOperationMessage(key, deviceMac, 2);
 }
     
-std::string udpMessageQueue::queueDeviceOperationMessage(const char* key, const char* deviceMac, int operation)
+void udpMessageQueue::queueDeviceOperationMessage(const char* key, const char* deviceMac, int operation)
 {
     std::ostringstream stream;
     stream << "{" << deviceMessageWithAccessToken("WriteDevice", key, deviceMac) << ",\"data\":{\"operation\":" << operation << "}}";
@@ -142,12 +142,14 @@ std::string udpMessageQueue::basicDeviceMessage(const char* msgType, const char*
 {
     std::ostringstream stream;
     stream << "\"msgType\":\"" << msgType << "\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\"";
+    return stream.str();
 }
 
 std::string udpMessageQueue::deviceMessageWithAccessToken(const char* msgType, const char* key, const char* deviceMac)
 {
     std::ostringstream stream;
     stream << basicDeviceMessage("ReadDevice", deviceMac) << "\",\"AccessToken\":\"" << accessToken.getAccessToken(key) << "\"";
+    return stream.str();
 }
 
 

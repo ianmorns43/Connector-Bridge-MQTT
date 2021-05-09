@@ -3,7 +3,9 @@
 #include <Arduino.h>
 #include <string>
 #include <vector>
+#include "ArduinoJson.h"
 #include "udpMessageQueue.h"
+#include "mqttMessage.h"
 
 class ConnectorUdp
 {
@@ -11,11 +13,12 @@ class ConnectorUdp
     ConnectorUdp(udpMessageQueue& udpMessages);
 
     void start();
-    void loop();
+    mqttMessage loop();
 
     private:
+    std::string parseHubDetailsAndFindMac(JsonDocument& doc);
+    mqttMessage createDeviceMessage(const char* updateType, JsonDocument& doc);
     udpMessageQueue& udpMessages;
-    std::string hubMac;
 
     bool deviceListReceived = false;
     unsigned int lastTimeDeviceListRequested = 0;

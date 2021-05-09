@@ -38,6 +38,14 @@ void setup()
 
 void loop() 
 {
-  udp.loop();
+  auto mqttMessage = udp.loop();
+  if(mqttMessage.empty())
+  {
+    udpMessages.sendNextMessage();
+  }
+  else
+  {
+    mqttMessage.publish(ConnectorMqttClient::mqttClient);
+  }
   ConnectorMqttClient::loop();
 }

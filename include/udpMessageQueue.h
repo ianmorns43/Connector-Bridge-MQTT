@@ -33,7 +33,7 @@ class udpMessageQueue
 
     void queueUnicastMessage(const char* body);
     void queueMulticastMessage(const char* body);
-    std::string queueDeviceOperationMessage(const char* key, const char* deviceMac, int operation);
+    void queueDeviceOperationMessage(const char* key, const char* deviceMac, int operation);
     std::string basicDeviceMessage(const char* msgType, const char* deviceMac);
     std::string deviceMessageWithAccessToken(const char* msgType, const char* key, const char* deviceMac);
 

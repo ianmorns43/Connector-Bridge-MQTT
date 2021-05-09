@@ -11,15 +11,16 @@ class ConnectorMqttClient
     public:
 
     static void setup(udpMessageQueue& messageQueueRef);
-    static void loop();    
+    static void loop();
+
+    static PubSubClient mqttClient;  
 
     private:
-    static void publishStatus(const char* topic, const char* payload);
+
     static void mqttConnect();
     static void mqttCallback(std::string topic, byte* message, unsigned int length);
 
-    static WiFiClient espClient;
-    static PubSubClient mqttClient;
+    static WiFiClient espClient;  
 
     static udpMessageQueue* messageQueue;
 };

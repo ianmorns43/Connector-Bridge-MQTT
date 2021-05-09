@@ -1,8 +1,8 @@
 Topics
 publishes:
 dooya_connector_hub/lwt                         <"online"|"offline">
-dooya_connector_hub/status                      {deviceCount:<deviceCount>, rssi:<hub rssi>}
-dooya_connector_hub/status/<deviceMac>          {updateType:"<commandSent|commandReceived|moveComplete|updateRequested>", 
+dooya_connector_hub/status/hub                  {deviceCount:<deviceCount>, mac:"<hubMac>", [rssi:<hub rssi>]}
+dooya_connector_hub/status/<deviceMac>          {updateType:"<commandReceived|moveComplete|updateRequested>", 
                                                  bidirectional:<is biderectional (bool)>,
                                                  targetPosition¹:<position (%)>
                                                  position²:<position (%)>, 
@@ -10,21 +10,24 @@ dooya_connector_hub/status/<deviceMac>          {updateType:"<commandSent|comman
                                                  battery²:<battery voltage (V)>, 
                                                  rssi²:<rssi>}
 
-¹ commandSent update type only
+
 ² for bi-directional blinds only
 
 Subscribes to:
-dooya_connector_hub/command                     {command:"updateDeviceList", mac:"<hubMac>"}
+dooya_connector_hub/command                     {command:"updateDeviceList"}
                                                 {command:"moveShade", mac:"<deviceMac>", key:"<hub-secret-key>", position:<newPosition>}
                                                 {command:"openShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
                                                 {command:"closeShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
                                                 {command:"stopShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
-                                                {command:"updateDevce", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                                {command:"updateDevce", mac:"<deviceMac>"}
 
 commands:
+heartbeat
+    The hub occasionally (~every 60s) multicasts a heartbeat message. The bridge publises this as a hub status message
+
 updateDeviceList
     Bridge will publish:
-        a hub status update message
+        a hub status update message (excluding the hub wifi RSSI info)
         followed by a device status update message of type "updateRequested" for each device
     
 moveShade
@@ -32,7 +35,6 @@ openShade
 closeShade
 stopShade
     Bridge will send the appropriate movement message to the hub
-    Bridge a device update messsage of type commandSent
 
     for bi-directional blinds only
     Bridge will publish a device status update message of type "commandReceived" when shade acknowledges command
