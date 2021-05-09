@@ -1,8 +1,8 @@
 Topics
 publishes:
 dooya_connector_hub/lwt                         <"online"|"offline">
-dooya_connector_hub/status/<hubMac>             {deviceCount:<deviceCount>, rssi:<hub rssi>}
-dooya_connector_hub/status/<hubMac>/<deviceMac> {updateType:"<commandSent|commandReceived|moveComplete|updateRequested>", 
+dooya_connector_hub/status                      {deviceCount:<deviceCount>, rssi:<hub rssi>}
+dooya_connector_hub/status/<deviceMac>          {updateType:"<commandSent|commandReceived|moveComplete|updateRequested>", 
                                                  bidirectional:<is biderectional (bool)>,
                                                  targetPosition¹:<position (%)>
                                                  position²:<position (%)>, 

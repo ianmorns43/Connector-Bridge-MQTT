@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "udpMessageQueue.h"
+#include "deviceType.h"
 
 
 udpMessageQueue::udpMessageQueue()
@@ -10,12 +11,18 @@ udpMessageQueue::udpMessageQueue()
 
 void udpMessageQueue::beginListening()
 {
+    timestamp.start();
     udpClient.beginMulticast(WiFi.localIP(), multicastIp, listenPort);
 }
 
 IPAddress udpMessageQueue::getUnicastIp()
 {
     return unicastIp;
+}
+
+void udpMessageQueue::setHubToken(const char* token)
+{
+    accessToken.setToken(token);
 }
 
 void udpMessageQueue::queueUnicastMessage(const char* body)
@@ -82,4 +89,30 @@ const std::string& udpMessageQueue::readNextIncomingPacket()
     }
 
     return messageBuffer;
+}
+
+void udpMessageQueue::queueDeviceStatusRequest(const char* deviceMac)
+{
+    queueUnicastMessage(deviceStatusRequestMsg(deviceMac).c_str());
+}
+
+void udpMessageQueue::queueMulticastDeviceListRequest()
+{  
+    queueMulticastMessage(deviceListMsg().c_str());
+}
+
+std::string udpMessageQueue::deviceListMsg()
+{
+    std::ostringstream stream;
+    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << timestamp.Generate() << "\" }";
+
+    return stream.str();
+}
+
+std::string udpMessageQueue::deviceStatusRequestMsg(const char* deviceMac)
+{
+    std::ostringstream stream;
+    stream << "{ \"msgType\":\"ReadDevice\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << timestamp.Generate() << "\" }";
+
+    return stream.str();
 }

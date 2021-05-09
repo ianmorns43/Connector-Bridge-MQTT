@@ -1,53 +1,17 @@
 #include "connectorUdp.h"
 #include "ArduinoJson.h"
-
-//The code returned for different device types in Device List
-std::string ConnectorUdp::DeviceType::RFMotor = "10000000";
-std::string ConnectorUdp::DeviceType::WiFiCurtain = "22000000";
-std::string ConnectorUdp::DeviceType::WiFiBridge = "02000001";
-std::string ConnectorUdp::DeviceType::WiFiTubularMotor = "22000002";
-std::string ConnectorUdp::DeviceType::WiFiReceiver = "22000005";
-
-std::string ConnectorUdp::DeviceType::ShadeTypeName(int type)
-{
-    Serial.printf("Type value: %d\r\n", type);
-    if(type < 1 || type > 14)
-    {
-        return "Unknown";
-    }
-    
-    return shadeTypes[type-1];
-}
-
-std::array<std::string, 14> ConnectorUdp::DeviceType::shadeTypes = {
-    "Roller Blinds",
-    "Venetian Blinds",
-    "Roman Blinds",
-    "Honeycomb Blinds",
-    "Shangri-La Blinds",
-    "Roller Shutter",
-    "Roller Gate",
-    "Awning",
-    "TDBU",
-    "Day&night Blinds",
-    "Dimming Blinds",
-    "Curtain",
-    "Curtain(Open Left)",
-    "Curtain(Open Right)"
-};
+#include "deviceType.h"
 
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
-ConnectorUdp::ConnectorUdp()
+ConnectorUdp::ConnectorUdp(udpMessageQueue& udpMessages)
+:udpMessages(udpMessages)
 {
+    start();
 }
 
 void ConnectorUdp::start()
-{
-    timestamp.start();
-    //Listen for broadcast messages
-    udpMessages.beginListening();
-    
+{  
     deviceListReceived = false;
     lastTimeDeviceListRequested = millis();
 }
@@ -69,19 +33,19 @@ void ConnectorUdp::loop()
 
         if(messageType == "Heartbeat")
         {
-            auto token = std::string((const char *)doc["token"]);
-            accessToken.setToken(token.c_str());
+            auto token = (const char *)doc["token"];
+            udpMessages.setHubToken(token);
             hubMac = std::string((const char *)doc["mac"]);
             auto rssi = (int) (doc["data"])["RSSI"];
 
-            Serial.printf("Heartbeat: token = %s, mac = %s, HubIp = %s, RSSI = %d\r\n", token.c_str(), hubMac.c_str(), udpMessages.getUnicastIp().toString().c_str(), rssi);
+            Serial.printf("Heartbeat: token = %s, mac = %s, HubIp = %s, RSSI = %d\r\n", token, hubMac.c_str(), udpMessages.getUnicastIp().toString().c_str(), rssi);
         
         }
         else if(messageType == "GetDeviceListAck")
         {
             deviceListReceived = true;
-            auto token = std::string((const char *)doc["token"]);
-            accessToken.setToken(token.c_str());
+            auto token = (const char *)doc["token"];
+            udpMessages.setHubToken(token);
             hubMac = std::string((const char *)doc["mac"]);
             
             auto data = doc["data"];
@@ -97,12 +61,12 @@ void ConnectorUdp::loop()
                 if(DeviceType::RFMotor == deviceType)
                 {
                     auto deviceMac = (const char*) device["mac"];
-                    udpMessages.queueUnicastMessage(deviceStatusRequestMsg(deviceMac).c_str());
+                    udpMessages.queueDeviceStatusRequest(deviceMac);
                     deviceList.push_back(deviceMac);
                 }
             }
 
-            Serial.printf("GetDeviceListAck: token = %s, mac = %s, HubIp = %s, Device count = %d\r\n", token.c_str(), hubMac.c_str(), udpMessages.getUnicastIp().toString().c_str(), deviceList.size());
+            Serial.printf("GetDeviceListAck: token = %s, mac = %s, HubIp = %s, Device count = %d\r\n", token, hubMac.c_str(), udpMessages.getUnicastIp().toString().c_str(), deviceList.size());
             Serial.print("MACs: ");
             for(auto it = deviceList.begin(); it != deviceList.end(); ++it)
             {
@@ -159,37 +123,15 @@ void ConnectorUdp::loop()
     }
     else if(!deviceListReceived && millis() > (lastTimeDeviceListRequested + 5000u))
     {
+        lastTimeDeviceListRequested = millis();
+        deviceListReceived = false;
         Serial.println("Asking hub to identify itself...");
-        sendMulticastDeviceListRequest();
+        udpMessages.queueMulticastDeviceListRequest();
     }
     else
     {
         udpMessages.sendNextMessage();
     }
-}
-
-void ConnectorUdp::sendMulticastDeviceListRequest()
-{
-    lastTimeDeviceListRequested = millis();
-    deviceListReceived = false;
-   
-    udpMessages.queueMulticastMessage(deviceListMsg().c_str());
-}
-
-std::string ConnectorUdp::deviceListMsg()
-{
-    std::ostringstream stream;
-    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << timestamp.Generate() << "\" }";
-
-    return stream.str();
-}
-
-std::string ConnectorUdp::deviceStatusRequestMsg(const char* deviceMac)
-{
-    std::ostringstream stream;
-    stream << "{ \"msgType\":\"ReadDevice\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << timestamp.Generate() << "\" }";
-
-    return stream.str();
 }
 
 

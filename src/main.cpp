@@ -2,6 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
 #include <string>
+#include "udpMessageQueue.h"
 #include "accessTokenGenerator.h"
 #include "connectorUdp.h"
 #include "connectorMqttClient.h"
@@ -10,8 +11,8 @@
 enum READ_WRITE{Write=HIGH, Read=LOW};
 
 
-
-ConnectorUdp udp;
+udpMessageQueue udpMessages;
+ConnectorUdp udp(udpMessages);
 ConnectorMqttClient mqttClient;
 
 void setup()
@@ -29,7 +30,9 @@ void setup()
 
   Serial.println("Connecting to mqtt broker");
   mqttClient.setup();
+  
   Serial.println("Opening UDP socket...");
+  udpMessages.beginListening();
   udp.start();
   Serial.println("Ready...");
 }
