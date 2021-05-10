@@ -99,7 +99,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
 
         messageQueue->queueSetPositionRequest((const char*)key_ptr, mac, (int) position_ptr);
     }
-    else if(command == "open")
+    else if(command == "openShade")
     {
         auto key_ptr = doc["key"];
         if(mac == nullptr || key_ptr == nullptr)
@@ -110,7 +110,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
 
         messageQueue->queueOpenRequest((const char*)key_ptr, mac);
     }
-    else if(command == "close")
+    else if(command == "closeShade")
     {
         auto key_ptr = doc["key"];
         if(mac == nullptr || key_ptr == nullptr)
@@ -121,7 +121,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
 
         messageQueue->queueCloseRequest((const char*)key_ptr, mac);
     }
-    else if(command == "stop")
+    else if(command == "stopShade")
     {
         auto key_ptr = doc["key"];
         if(mac == nullptr || key_ptr == nullptr)
@@ -131,6 +131,10 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
         }
 
         messageQueue->queueStopRequest((const char*)key_ptr, mac);
+    }
+    else
+    {
+        Serial.printf("Unrecognised command %s\r\n", command.c_str());
     }
 }
 

@@ -76,6 +76,8 @@ mqttMessage ConnectorUdp::loop()
         {            
             return createDeviceMessage("updateRequested", doc);
         }
+
+        Serial.printf("Unrecognised udp: %s\r\n", packet.c_str());
     }
     else if(!deviceListReceived && millis() > (lastTimeDeviceListRequested + 5000u))
     {

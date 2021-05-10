@@ -148,7 +148,7 @@ std::string udpMessageQueue::basicDeviceMessage(const char* msgType, const char*
 std::string udpMessageQueue::deviceMessageWithAccessToken(const char* msgType, const char* key, const char* deviceMac)
 {
     std::ostringstream stream;
-    stream << basicDeviceMessage("ReadDevice", deviceMac) << "\",\"AccessToken\":\"" << accessToken.getAccessToken(key) << "\"";
+    stream << basicDeviceMessage(msgType, deviceMac) << ",\"AccessToken\":\"" << accessToken.getAccessToken(key) << "\"";
     return stream.str();
 }
 
