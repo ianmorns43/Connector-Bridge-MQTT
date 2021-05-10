@@ -20,6 +20,7 @@ metadata {
 	definition (name: "Dooya Bidirectional Blind", namespace: "ianmorns_rfremote", author: "Ian Morns") {
 		capability "WindowShade"
         capability "Configuration"
+        capability "Refresh"
         capability "Actuator"
 
         attribute "hubStatus", "ENUM", ["online","offline","unknown"]
@@ -71,6 +72,11 @@ def startPositionChange(direction)
 def stopPositionChange()
 {
     publish("stopShade", true)
+}
+
+def refresh()
+{
+    publish("updateDevice", false)
 }
 
 def publish(String command, Boolean includeKey)
