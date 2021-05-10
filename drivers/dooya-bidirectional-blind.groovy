@@ -51,6 +51,11 @@ def parse(String description)
     def attributes = slurper.parseText(message.payload)
     logTrace(attributes)
 
+    if(attributes.containsKey("shadeType"))
+    {
+        device.setName(attributes.shadeType)
+    }
+
     if(attributes.containsKey("battery"))
     {
         sendEvent(name: "battery", value: attributes.battery)
