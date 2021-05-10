@@ -91,11 +91,11 @@ def initialize()
     {
         if(settings.bidirectional)
         {
-            child = app.addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", getChildDeviceId(), [name: "Dooya Bidirectional Blind", label: appName, isComponent: true])
+            child = app.addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", getChildDeviceId(), [label: settings.blindName, isComponent: true])
         }
         else
         {
-            child = app.addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", getChildDeviceId(), [name: "Dooya Bidirectional Blind", label: appName, isComponent: true])
+            child = app.addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", getChildDeviceId(), [label: settings.blindName, isComponent: true])
         }
     }
 
