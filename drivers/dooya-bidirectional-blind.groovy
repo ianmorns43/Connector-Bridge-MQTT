@@ -119,6 +119,7 @@ def startPositionChange(direction)
 def stopPositionChange()
 {
     publish("stopShade", true)
+    runIn(1, refresh);
 }
 
 def refresh()
