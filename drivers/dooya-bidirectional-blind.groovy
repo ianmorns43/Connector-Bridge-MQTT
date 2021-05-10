@@ -21,6 +21,8 @@ metadata {
 		capability "WindowShade"
         capability "Configuration"
         capability "Refresh"
+        capability "Battery"
+        capability "SignalStrength"
         capability "Actuator"
 
         attribute "hubStatus", "ENUM", ["online","offline","unknown"]
@@ -49,10 +51,19 @@ def parse(String description)
     def attributes = slurper.parseText(message.payload)
     logTrace(attributes)
 
+    if(attributes.containsKey("battery"))
+    {
+        sendEvent(name: "battery", value: attributes.battery)
+    }
+
+    if(attributes.containsKey("rssi"))
+    {
+        sendEvent(name: "rssi", value: attributes.rssi)
+    }
+
     if(attributes.containsKey("position"))
     {
         sendEvent(name:"position", value: attributes.position)
-
 
         if(attributes.updateType == "updateRequested" || attributes.updateType == "moveComplete")
         {
@@ -62,6 +73,14 @@ def parse(String description)
         {
             sendEvent(name: "windowShade", value: state.lastMovementDirection);
         }
+    }
+}
+
+private updateAttribute(Map attributes, String attributeName)
+{
+    if(attributes.containsKey(attributeName))
+    {
+        sendEvent(name: attributeName, value: attributes[attributeName])
     }
 }
 
