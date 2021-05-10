@@ -42,25 +42,53 @@ def parse(String description)
     if(message.topic.endsWith("/lwt"))
     {
         sendEvent(name: "hubStatus", value: message.payload)
+        return
     }
+
+    def slurper = new JsonSlurper()
+    def attributes = slurper.parseText(message.payload)
+    logTrace(attributes)
+
+    if(attributes.containsKey("position"))
+    {
+        sendEvent(name:"position", value: attributes.position)
+
+
+        if(attributes.updateType == "updateRequested" || attributes.updateType == "moveComplete")
+        {
+            setShadeBasedOnPosition(attributes.position)
+        }
+        else if(attributes.updateType == "commandReceived")
+        {
+            sendEvent(name: "windowShade", value: state.lastMovementDirection);
+        }
+    }
+}
+
+def setShadeBasedOnPosition(position)
+{
+    def shade = position == 0 ? "closed" : (position == 100 ? "open" : "partially open")
+    sendEvent(name: "windowShade", value: shade);
 }
 
 def setPosition(position)
 {
     logTrace("SetPosition: ${position}");
-    
+    state.lastMovementDirection = position > device.currentValue["position"] ? "opening" : "closing"
     publish("moveShade", true, [position:position])
 }
 
 def open()
 {
     logTrace("Open")
+    state.lastMovementDirection = "opening"
     publish("openShade", true)
 }
 
 def close()
 {
     logTrace("Close")
+    state.lastMovementDirection = "closing"
     publish("closeShade", true)
 }
 

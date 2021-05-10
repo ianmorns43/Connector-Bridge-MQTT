@@ -29,7 +29,7 @@ void ConnectorMqttClient::mqttConnect()
             auto result = mqttClient.subscribe(commandTopic.str().c_str());
             Serial.printf("Subscribing to '%s' %s\r\n", commandTopic.str().c_str(), result? "succeded":"failed");
 
-            mqttClient.publish(lwtTopic.str().c_str(),"online", 0);
+            mqttClient.publish(lwtTopic.str().c_str(),"online", true);
         } 
         else 
         {
