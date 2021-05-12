@@ -71,6 +71,11 @@ def parse(String description)
     {
         sendEvent(name:"position", value: attributes.position)
 
+        if(attributes.updateType == "moveComplete")
+        {
+            unschedule(timeout)
+        }
+
         if(attributes.updateType == "updateRequested" || attributes.updateType == "moveComplete")
         {
             setShadeBasedOnPosition(attributes.position)
@@ -100,21 +105,21 @@ def setPosition(position)
 {
     logTrace("SetPosition: ${position}");
     state.lastMovementDirection = position > device.currentValue["position"] ? "opening" : "closing"
-    publish("moveShade", true, [position:position])
+    publishWithRetry([command:"moveShade", includeKey:true, parameters:[position:position]], [position:position])
 }
 
 def open()
 {
     logTrace("Open")
     state.lastMovementDirection = "opening"
-    publish("openShade", true)
+    publishWithRetry([command:"openShade", includeKey:true], [windowShade:"open"])
 }
 
 def close()
 {
     logTrace("Close")
     state.lastMovementDirection = "closing"
-    publish("closeShade", true)
+    publishWithRetry([command:"closeShade", includeKey:true], [windowShade:"closed"])
 }
 
 def startPositionChange(direction)
@@ -130,12 +135,17 @@ def stopPositionChange()
 
 def refresh()
 {
-    publish("updateDevice", false)
+    publishWithRetry(refreshAction())
 }
 
-def publish(String command, Boolean includeKey)
+def refreshWithoutRetry()
 {
-    publish(command, includeKey, null)
+    publish(refreshAction())
+}
+
+def refreshAction()
+{
+    return [command:"updateDevice", includeKey:false]    
 }
 
 /*
@@ -147,8 +157,65 @@ dooya_connector_hub/command                     {command:"updateDeviceList"}
                                                 {command:"updateDevce", mac:"<deviceMac>"}
                                                 */
 
-def publish(String command, Boolean includeKey, data)
+def publishWithRetry(Map action, Map expected)
 {
+    def retryInterval = 10
+    def data =[data: [action:action, nexAction:"refresh", lastRetryInterval:retryInterval, expected:expected]]
+    publish(action)
+    runIn(retryInterval, timeout, data)
+}
+
+def timeout(data)
+{
+    logTrace("Timeout: ${data}")
+    Integer maximumRetryInterval = 600
+
+    def expectedShade = data.expected?.windowShade
+    def expectedPositon = data.expected?.position
+    if( (expectedShade && expectedShade == device.currentValue("windowShade")) || (expectedPositon != null && expectedPositon == device.currentValue("position")))
+    {
+        logTrace("Blind is in expected state - stop retry")
+        return
+    }
+
+    if(data.action.command == refreshAction().action && data.lastRetryInterval == maximumRetryInterval)
+    {
+        logTrace("Just trying to refresh, may as well let the regular ping take over from here")
+        return
+    }
+
+    def nextAction = data.nextAction
+    def retryInterval = 0
+    def action = null
+
+    //If the action we are retrying is Refresh, no point in alternating between refresh and action, they're the same
+    if(nextAction == "action" || data.action.command == refreshAction().command)
+    {
+        //Gradually make the retry interval longer until it reaches a maximum
+        retryInterval = Math.min((Integer) (data.lastRetryInterval * 1.5), maximumRetryInterval)
+        data.lastRetryInterval = retryInterval;
+
+        data.nextAction = retryInterval < maximumRetryInterval ? "refresh" : "action"
+        action = data.action
+    }
+    else //If we tried to move the blind, check to see if the blind has actually moved but we missed the notification before trying to movve it again
+    {
+        retryInterval = 5
+        data.nextAction = "action"
+        action = refreshAction()
+
+    }
+
+    publish(action)
+    runIn(retryInterval, timeout, [data: data])
+}
+
+def publish(Map action)
+{
+    String command = action.command
+    Boolean includeKey = action.includeKey
+    Map parameters = action.parameters
+
     reconectIfNessecary()
 
     def details = parent.getConnectionDetails()
@@ -159,13 +226,13 @@ def publish(String command, Boolean includeKey, data)
         payload["key"] = details.hubKey
     }
 
-    if(data)
+    if(parameters)
     {
-        payload << data
+        payload << parameters
     }
 
     def topic = "${details.hubTopic}/command"
-    logTrace("Publish: ${topic}, ${payload}")
+    //logTrace("Publish: ${topic}, ${payload}")
     def payloadJson = JsonOutput.toJson(payload)
 
     
@@ -210,7 +277,7 @@ def startPing()
     def second = Math.round(Math.random() * 59);
     def minute = Math.round(Math.random() * (refreshInterval - 1));
 
-    schedule("${second} ${minute}/${refreshInterval} * ? * * *", "refresh");
+    schedule("${second} ${minute}/${refreshInterval} * ? * * *", "refreshWithoutRetry");
 }
 
 def subscritionTopics()
