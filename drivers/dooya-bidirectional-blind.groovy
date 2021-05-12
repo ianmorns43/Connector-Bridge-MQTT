@@ -73,7 +73,12 @@ def parse(String description)
 
         if(attributes.updateType == "moveComplete")
         {
-            unschedule(timeout)
+            unschedule(movementTimeout)
+        }
+
+        if(attributes.updateType == "updateRequested")
+        {
+            unschedule(refreshTimeout)
         }
 
         if(attributes.updateType == "updateRequested" || attributes.updateType == "moveComplete")
@@ -135,7 +140,9 @@ def stopPositionChange()
 
 def refresh()
 {
-    publishWithRetry(refreshAction())
+    def retryInterval = 10
+    publish(refreshAction())
+    runIn(retryInterval, refreshTimeout, [data: [lastRetryInterval:retryInterval]])
 }
 
 def refreshWithoutRetry()
@@ -159,13 +166,31 @@ dooya_connector_hub/command                     {command:"updateDeviceList"}
 
 def publishWithRetry(Map action, Map expected)
 {
-    def retryInterval = 10
+    def retryInterval = 60
     def data =[data: [action:action, nexAction:"refresh", lastRetryInterval:retryInterval, expected:expected]]
     publish(action)
     runIn(retryInterval, timeout, data)
 }
 
-def timeout(data)
+def refreshTimeout(data)
+{
+    logTrace("Refresh Timeout: ${data}")
+    Integer maximumRetryInterval = 600
+
+    def retryInterval = (Integer) (data.lastRetryInterval * 1.5)
+    if(retryInterval >= maximumRetryInterval)
+    {
+        logTrace("Just trying to refresh, may as well let the regular ping take over from here")
+        return
+    }
+    
+    data.lastRetryInterval = retryInterval;
+
+    publish(refreshAction())
+    runIn(retryInterval, refreshTimeout, [data: data])
+}
+
+def movementTimeout(data)
 {
     logTrace("Timeout: ${data}")
     Integer maximumRetryInterval = 600
@@ -178,18 +203,11 @@ def timeout(data)
         return
     }
 
-    if(data.action.command == refreshAction().action && data.lastRetryInterval == maximumRetryInterval)
-    {
-        logTrace("Just trying to refresh, may as well let the regular ping take over from here")
-        return
-    }
-
     def nextAction = data.nextAction
     def retryInterval = 0
     def action = null
 
-    //If the action we are retrying is Refresh, no point in alternating between refresh and action, they're the same
-    if(nextAction == "action" || data.action.command == refreshAction().command)
+    if(nextAction == "action")
     {
         //Gradually make the retry interval longer until it reaches a maximum
         retryInterval = Math.min((Integer) (data.lastRetryInterval * 1.5), maximumRetryInterval)
@@ -207,7 +225,7 @@ def timeout(data)
     }
 
     publish(action)
-    runIn(retryInterval, timeout, [data: data])
+    runIn(retryInterval, movementTimeout, [data: data])
 }
 
 def publish(Map action)
