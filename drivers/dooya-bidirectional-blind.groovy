@@ -149,6 +149,8 @@ dooya_connector_hub/command                     {command:"updateDeviceList"}
 
 def publish(String command, Boolean includeKey, data)
 {
+    reconectIfNessecary()
+
     def details = parent.getConnectionDetails()
     def payload = [command:command, mac:details.mac]
 
@@ -231,7 +233,7 @@ public configure()
         subscritionTopics().each{ topic -> interfaces.mqtt.unsubscribe(topic) }
         interfaces.mqtt.disconnect()
     }
-    reconectIfNessecary()
+    refresh()
 }
 
 public brokerStatusChanged(evt)
