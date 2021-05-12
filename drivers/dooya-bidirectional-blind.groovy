@@ -28,8 +28,9 @@ metadata {
         attribute "hubStatus", "ENUM", ["online","offline","unknown"]
 	}
    
-    section("Logging") 
+    section() 
     {
+        input "refreshInterval", "number", title: "Refresh polling interval (min)", required: true, defaultValue: 20
         input "enableLogging", "bool", title: "Enable debug logging for 30 minutes", multiple: false, defaultValue: true
     }
 }
@@ -196,6 +197,18 @@ def initialize()
     {
         runIn(1800, "disableLogging");
     }
+
+    startPing()
+}
+
+def startPing()
+{
+    def refreshInterval = 20
+
+    def second = Math.round(Math.random() * 59);
+    def minute = Math.round(Math.random() * (refreshInterval - 1));
+
+    schedule("${second} ${minute}/${refreshInterval} * ? * * *", "refresh");
 }
 
 def subscritionTopics()
