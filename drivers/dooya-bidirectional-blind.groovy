@@ -109,7 +109,7 @@ def setShadeBasedOnPosition(position)
 def setPosition(position)
 {
     logTrace("SetPosition: ${position}");
-    state.lastMovementDirection = position > device.currentValue["position"] ? "opening" : "closing"
+    state.lastMovementDirection = position > device.currentValue("position") ? "opening" : "closing"
     publishWithRetry([command:"moveShade", includeKey:true, parameters:[position:position]], [position:position])
 }
 
@@ -169,7 +169,7 @@ def publishWithRetry(Map action, Map expected)
     def retryInterval = 60
     def data =[data: [action:action, nexAction:"refresh", lastRetryInterval:retryInterval, expected:expected]]
     publish(action)
-    runIn(retryInterval, timeout, data)
+    runIn(retryInterval, movementTimeout, data)
 }
 
 def refreshTimeout(data)
