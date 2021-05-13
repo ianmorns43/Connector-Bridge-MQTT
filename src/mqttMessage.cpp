@@ -13,7 +13,7 @@ bool mqttMessage::empty()
 void mqttMessage::publish(PubSubClient& mqttClient)
 {
     std::ostringstream stream;
-    stream << MQTT_TOPIC << "/status/" << topic;
+    stream << MQTT_TOPIC << "/" << topic;
     auto fullTopic = stream.str().c_str();
 
     Serial.printf("Publish to: %s, %s\r\n", fullTopic, payload.c_str());
@@ -26,52 +26,69 @@ mqttMessage mqttMessage::emptyMessage()
     return mqttMessage(emptyString.c_str(),emptyString);
 }
 
-mqttMessage mqttMessage::createHubMessage(int deviceCount, const char* hubMac)
+mqttMessage mqttMessage::createDeviceListMessage(int deviceCount, const char* hubMac, const DeviceList& deviceList)
 {
-    return createHubMessage(deviceCount, hubMac, 0);
+    // {mac:"<hubMac>", "deviceMacs":[<device1Mac>",..., <deviceNMac>"]}
+    std::ostringstream stream;
+    stream << "{";
+    stream << "\"mac\":\"" << hubMac << "\"";
+    stream << ",\"deviceMacs\":[";
+
+    auto it = deviceList.begin(); 
+    while(it != deviceList.end())
+    {
+        stream << "\"" << *it << "\"";
+
+        if( ++it != deviceList.end())
+        {
+            stream << ",";
+        }
+    }
+
+    stream << "]}";
+
+    const char* hubTopic = "update/hub";
+    std::string hubPayload = stream.str();
+    return mqttMessage(hubTopic, hubPayload);
 }
 
-mqttMessage mqttMessage::createHubMessage(int deviceCount, const char* hubMac, int rssi)
+mqttMessage mqttMessage::createHeartbeatMessage(int deviceCount, const char* hubMac, int rssi)
 {
     std::ostringstream stream;
     stream << "{";
     stream << "\"deviceCount\":" << deviceCount << "";
     stream << ",\"mac\":\"" << hubMac << "\"";
-    if(rssi != 0)
-    {
-        stream << ",\"rssi\":" << rssi << "";
-    }
+    stream << ",\"rssi\":" << rssi << "";
     stream << "}";
 
-    const char* hubTopic = "hub";
+    const char* hubTopic = "heartbeat/hub";
     std::string hubPayload = stream.str();
     return mqttMessage(hubTopic, hubPayload);
 }
 
 mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac, const char* updateType, int position, const char* shadeType, int batteryLevel, int rssi)
 {
-    std::ostringstream stream;
-    stream << "{";
-    stream << "\"updateType\":\"" << updateType << "\"";
-    stream << ",\"bidirectional\":true";
-    stream << ",\"position\":" << 100 - position;
-    stream << ",\"shadeType\":\"" << shadeType << "\"";
-    stream << ",\"battery\":" << batteryLevel;
-    stream << ",\"rssi\":" << rssi;
-    stream << "}";
+    std::ostringstream payloadStream;
+    payloadStream << "{";
+    payloadStream << "\"bidirectional\":true";
+    payloadStream << ",\"position\":" << 100 - position;
+    payloadStream << ",\"shadeType\":\"" << shadeType << "\"";
+    payloadStream << ",\"battery\":" << batteryLevel;
+    payloadStream << ",\"rssi\":" << rssi;
+    payloadStream << "}";
 
-    std::string devicePayload = stream.str();
-    return mqttMessage(deviceMac, devicePayload);
+    std::ostringstream topicStream;
+    topicStream << updateType << "/" << deviceMac;
+
+    std::string devicePayload = payloadStream.str();
+    return mqttMessage(topicStream.str().c_str(), devicePayload);
 }
 
 mqttMessage mqttMessage::createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType)
 {
-    std::ostringstream stream;
-    stream << "{";
-    stream << "\"updateType\":\"" << updateType << "\"";
-    stream << ",\"bidirectional\":false";
-    stream << "}";
+    std::ostringstream topicStream;
+    topicStream << updateType << "/" << deviceMac;
 
-    std::string devicePayload = stream.str();
-    return mqttMessage(deviceMac, devicePayload);
+    std::string devicePayload("{\"bidirectional\":false}");
+    return mqttMessage(topicStream.str().c_str(), devicePayload);
 }

@@ -38,7 +38,7 @@ mqttMessage ConnectorUdp::loop()
             auto rssi = (int) data["RSSI"];
             auto deviceCount = (int )data["numberOfDevices"];
 
-            return mqttMessage::createHubMessage(deviceCount, hubMac.c_str(), rssi);
+            return mqttMessage::createHeartbeatMessage(deviceCount, hubMac.c_str(), rssi);
         }
         else if(messageType == "GetDeviceListAck")
         {
@@ -48,6 +48,9 @@ mqttMessage ConnectorUdp::loop()
             auto data = doc["data"];
             auto deviceCount = 0;
 
+            mqttMessage::DeviceList deviceList;
+            deviceList.reserve(data.size());
+
             for(size_t i = 0; i < data.size(); i++)
             {
                 auto device = data[i];
@@ -56,12 +59,13 @@ mqttMessage ConnectorUdp::loop()
                 if(DeviceType::RFMotor == deviceType)
                 {
                     auto deviceMac = (const char*) device["mac"];
+                    deviceList.push_back(deviceMac);
                     udpMessages.queueDeviceStatusRequest(deviceMac);
                     deviceCount++;
                 }
             }
 
-            return mqttMessage::createHubMessage(deviceCount, hubMac.c_str());
+            return mqttMessage::createDeviceListMessage(deviceCount, hubMac.c_str(), deviceList);
 
         }
         else if(messageType == "WriteDeviceAck")
@@ -74,7 +78,7 @@ mqttMessage ConnectorUdp::loop()
         }
         else if(messageType == "ReadDeviceAck") //When asked for
         {            
-            return createDeviceMessage("updateRequested", doc);
+            return createDeviceMessage("update", doc);
         }
 
         Serial.printf("Unrecognised udp: %s\r\n", packet.c_str());

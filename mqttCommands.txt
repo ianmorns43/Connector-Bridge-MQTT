@@ -1,10 +1,12 @@
 Topics
 publishes:
 dooya_connector_hub/lwt                         <"online"|"offline">
-dooya_connector_hub/status/hub                  {deviceCount:<deviceCount>, mac:"<hubMac>", [rssi:<hub rssi>]}
-dooya_connector_hub/status/<deviceMac>          {updateType:"<commandReceived|moveComplete|updateRequested>", 
-                                                 bidirectional:<is biderectional (bool)>,
-                                                 targetPosition¹:<position (%)>
+dooya_connector_hub/heartbeat/hub               {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
+dooya_connector_hub/update/hub                  {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
+
+dooya_connector_hub/update/<deviceMac>           
+dooya_connector_hub/commandReceived/<deviceMac>           
+dooya_connector_hub/moveComplete/<deviceMac>    {bidirectional:<is biderectional (bool)>,
                                                  position²:<position (%)>, 
                                                  shadeType²:"<Roller Blinds|Roman Blinds etc...>", 
                                                  battery²:<battery voltage (V)>, 
