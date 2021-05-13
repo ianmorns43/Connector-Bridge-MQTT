@@ -47,7 +47,7 @@ mqttMessage mqttMessage::createDeviceListMessage(int deviceCount, const char* hu
 
     stream << "]}";
 
-    const char* hubTopic = "update/hub";
+    const char* hubTopic = "hub/deviceList";
     std::string hubPayload = stream.str();
     return mqttMessage(hubTopic, hubPayload);
 }
@@ -61,7 +61,7 @@ mqttMessage mqttMessage::createHeartbeatMessage(int deviceCount, const char* hub
     stream << ",\"rssi\":" << rssi << "";
     stream << "}";
 
-    const char* hubTopic = "heartbeat/hub";
+    const char* hubTopic = "hub/heartbeat";
     std::string hubPayload = stream.str();
     return mqttMessage(hubTopic, hubPayload);
 }
@@ -78,7 +78,7 @@ mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac,
     payloadStream << "}";
 
     std::ostringstream topicStream;
-    topicStream << updateType << "/" << deviceMac;
+    topicStream << deviceMac << "/" << updateType;
 
     std::string devicePayload = payloadStream.str();
     return mqttMessage(topicStream.str().c_str(), devicePayload);
@@ -87,7 +87,7 @@ mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac,
 mqttMessage mqttMessage::createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType)
 {
     std::ostringstream topicStream;
-    topicStream << updateType << "/" << deviceMac;
+    topicStream << deviceMac << "/" << updateType;
 
     std::string devicePayload("{\"bidirectional\":false}");
     return mqttMessage(topicStream.str().c_str(), devicePayload);

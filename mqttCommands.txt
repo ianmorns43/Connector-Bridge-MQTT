@@ -1,12 +1,12 @@
 Topics
 publishes:
 dooya_connector_hub/lwt                         <"online"|"offline">
-dooya_connector_hub/heartbeat/hub               {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
-dooya_connector_hub/update/hub                  {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
+dooya_connector_hub/hub/heartbeat               {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
+dooya_connector_hub/hub/deviceList              {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
 
-dooya_connector_hub/update/<deviceMac>           
-dooya_connector_hub/commandReceived/<deviceMac>           
-dooya_connector_hub/moveComplete/<deviceMac>    {bidirectional:<is biderectional (bool)>,
+dooya_connector_hub/<deviceMac>/status           
+dooya_connector_hub/<deviceMac>/commandReceived           
+dooya_connector_hub/<deviceMac>/moveComplete    {bidirectional:<is biderectional (bool)>,
                                                  position²:<position (%)>, 
                                                  shadeType²:"<Roller Blinds|Roman Blinds etc...>", 
                                                  battery²:<battery voltage (V)>, 
@@ -25,22 +25,25 @@ dooya_connector_hub/command                     {command:"updateDeviceList"}
 
 commands:
 heartbeat
-    The hub occasionally (~every 60s) multicasts a heartbeat message. The bridge publises this as a hub status message
+    The hub occasionally (~every 60s) multicasts a heartbeat message. The bridge publises this as a hub/heartbeat message
 
 updateDeviceList
     Bridge will publish:
-        a hub status update message (excluding the hub wifi RSSI info)
-        followed by a device status update message of type "updateRequested" for each device
+        a hub/deviceList message
+        followed by a  status update for each device
     
 moveShade
 openShade
 closeShade
 stopShade
-    Bridge will send the appropriate movement message to the hub
+    Bridge will send the appropriate movement message to the hub    
+    Bridge will publish a device commandReceive when hub receives the command
 
-    for bi-directional blinds only
-    Bridge will publish a device status update message of type "commandReceived" when shade acknowledges command
-    Bridge will publish a device staus update message of type "moveComplete" when shade completes its move 
+    for bi-directional blinds
+    Bridge will publish a device moveComplete when shade completes its move 
+
+    for single-deirectional blinds
+    Bridge will publish a device moveComplete when hub broadcasts the command
     
 updateDevce
-    Bridge will publish a status update message of type "updateRequested"
+    Bridge will publish a device status

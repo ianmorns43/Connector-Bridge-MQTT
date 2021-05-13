@@ -42,7 +42,8 @@ def parse(String description)
     def message = interfaces.mqtt.parseMessage(description)
     logTrace(message)
 
-    if(message.topic.endsWith("/lwt"))
+    def topic = message.topic
+    if(topic.endsWith("/lwt"))
     {
         sendEvent(name: "hubStatus", value: message.payload)
         return
@@ -70,25 +71,23 @@ def parse(String description)
     if(attributes.containsKey("position"))
     {
         sendEvent(name:"position", value: attributes.position)
+    }
 
-        if(attributes.updateType == "moveComplete")
-        {
-            unschedule(movementTimeout)
-        }
+    if(topic.endsWith("status"))
+    {
+        unschedule(refreshTimeout)
+        setShadeBasedOnPosition(attributes.position)
+    }
 
-        if(attributes.updateType == "updateRequested")
-        {
-            unschedule(refreshTimeout)
-        }
+    if(topic.endsWith("commandReceived"))
+    {
+        sendEvent(name: "windowShade", value: state.lastMovementDirection);
+    }
 
-        if(attributes.updateType == "updateRequested" || attributes.updateType == "moveComplete")
-        {
-            setShadeBasedOnPosition(attributes.position)
-        }
-        else if(attributes.updateType == "commandReceived")
-        {
-            sendEvent(name: "windowShade", value: state.lastMovementDirection);
-        }
+    if(topic.endsWith("moveComplete"))
+    {
+        unschedule(movementTimeout)
+        setShadeBasedOnPosition(attributes.position)
     }
 }
 
@@ -302,10 +301,9 @@ def subscritionTopics()
 {
     def details = parent.getConnectionDetails()
     def hubTopic = details.hubTopic
-    def hubKey = details.key
 
     topics = []
-    topics << "${details.hubTopic}/status/${details.mac}"
+    topics << "${details.hubTopic}/${details.mac}/+"
     topics << "${details.hubTopic}/lwt"
     return topics
 }
