@@ -133,6 +133,7 @@ def startPositionChange(direction)
 
 def stopPositionChange()
 {
+    state.lastMovementDirection = "partially open"
     publish("stopShade", true)
     runIn(1, refresh);
 }
