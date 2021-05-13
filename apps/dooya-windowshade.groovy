@@ -17,7 +17,7 @@
 definition(
     name: "Dooya Window Shade",
     namespace: "ianmorns_rfremote",
-    parent: "ianmorns_rfremote:Connector Hub",
+    parent: "ianmorns_rfremote:Connector Hub Control",
     author: "Ian Morns",
     description: "Connects to a device on a Dooya Connector Hub",
     category: "Convenience",

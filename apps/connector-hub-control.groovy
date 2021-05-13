@@ -1,5 +1,5 @@
 /**
- *  Connector Hub (Hubitat)
+ *  Connector Hub Control (Hubitat)
  *
  *  Copyright 2021 Ian Morns
  *
@@ -15,7 +15,7 @@
  */
 
 definition(
-    name: "Connector Hub",
+    name: "Connector Hub Control",
     namespace: "ianmorns_rfremote",    
     singleInstance: true,
     author: "Ian Morns",
@@ -24,7 +24,6 @@ definition(
     iconUrl: "",
     iconX2Url: "",
     iconX3Url: "")
-
 
 preferences
 {  
