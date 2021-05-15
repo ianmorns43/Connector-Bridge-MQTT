@@ -82,30 +82,6 @@ def parse(String description)
 
     if(topic.endsWith("/update"))
     {
-        /*def pattern = ~"(?<mac>[a-f|0-9]*)/update"
-        def matcher = topic =~ pattern
-
-        logTrace("Matcheer ${matcher }")
-        logTrace("Matches? ${matcher.matches() }")
-
-        try
-        {
-            def deviceMac = matcher.group('mac')
-
-
-            logTrace("Mac = ${deviceMac}")      
-
-            state.deviceList[deviceMac].isBidirectional = payload.bidirectional
-            state.deviceList[deviceMac].upToDate = true
-        }
-        catch(ex)
-        {
-            logTrace("Error: ${ex}, stopping retry")
-            unschedule(refreshDevicesWithRetry)
-        }*/
-
-
-
         try
         {
             def withUpdate = topic.find("[a-f|0-9]*/update")
