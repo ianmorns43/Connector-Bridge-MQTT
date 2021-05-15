@@ -73,7 +73,7 @@ def parse(String description)
         sendEvent(name:"position", value: attributes.position)
     }
 
-    if(topic.endsWith("status"))
+    if(topic.endsWith("update"))
     {
         unschedule(refreshTimeout)
         setShadeBasedOnPosition(attributes.position)

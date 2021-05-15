@@ -26,7 +26,7 @@ mqttMessage mqttMessage::emptyMessage()
     return mqttMessage(emptyString.c_str(),emptyString);
 }
 
-mqttMessage mqttMessage::createDeviceListMessage(int deviceCount, const char* hubMac, const DeviceList& deviceList)
+mqttMessage mqttMessage::createDeviceListMessage(const char* hubMac, const DeviceList& deviceList)
 {
     // {mac:"<hubMac>", "deviceMacs":[<device1Mac>",..., <deviceNMac>"]}
     std::ostringstream stream;

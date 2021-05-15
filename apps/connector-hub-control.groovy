@@ -32,6 +32,18 @@ preferences
 
 def mainPage()
 {
+    def hubDevice = getHubDevice()
+    logTrace("HubDevice ${hubDevice}")
+    if(!hubDevice) //TODO no point in creating hubDevice until mqtt details are set
+    {
+        hubDevice = app.addChildDevice("ianmorns_rfremote", "Connector Hub", getHubDeviceId(), [isComponent: true])
+        hubDevice.configure()
+    }
+    else
+    {
+        hubDevice.configure()
+    }
+
     def validationResult = validateBroker()
     
 	def page = dynamicPage(name: "mainPage",  title:"<b>Connector Hub Setup</b>\n", uninstall: true, install: true)
@@ -127,7 +139,8 @@ public updateConnections(evt)
 
 public brokerStatusChanged(evt)
 {
-    app?.getChildApps().each{ it.brokerStatusChanged(evt) }
+    app.getChildApps().each{ it.brokerStatusChanged(evt) }
+    app.getChildDevices().each{ it.brokerStatusChanged(evt) }
 }
 
 public getHubDetails()
@@ -137,6 +150,21 @@ public getHubDetails()
     details['hubTopic'] = settings.hubTopic
     details['hubKey'] = settings.hubKey
     return details
+}
+
+private getHubDeviceId()
+{
+    if(!state.hubDeviceId)
+    {
+        state.hubDeviceId = UUID.randomUUID().toString();
+    }
+
+    return state.hubDeviceId;
+}
+
+private getHubDevice()
+{
+    return app.getChildDevice(getHubDeviceId());
 }
 
 private disableLogging()

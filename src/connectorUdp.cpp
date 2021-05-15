@@ -46,8 +46,7 @@ mqttMessage ConnectorUdp::loop()
 
             auto hubMac = parseHubDetailsAndFindMac(doc);
             auto data = doc["data"];
-            auto deviceCount = 0;
-
+ 
             mqttMessage::DeviceList deviceList;
             deviceList.reserve(data.size());
 
@@ -60,12 +59,10 @@ mqttMessage ConnectorUdp::loop()
                 {
                     auto deviceMac = (const char*) device["mac"];
                     deviceList.push_back(deviceMac);
-                    udpMessages.queueDeviceStatusRequest(deviceMac);
-                    deviceCount++;
                 }
             }
 
-            return mqttMessage::createDeviceListMessage(deviceCount, hubMac.c_str(), deviceList);
+            return mqttMessage::createDeviceListMessage(hubMac.c_str(), deviceList);
 
         }
         else if(messageType == "WriteDeviceAck")
