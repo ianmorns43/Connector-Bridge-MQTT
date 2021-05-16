@@ -37,11 +37,6 @@ metadata {
 
 def parse(String description)
 {
-    if(state.deviceList == null)
-    {
-        state.deviceList = [:]
-    }
-
     def message = interfaces.mqtt.parseMessage(description)
     logTrace(message)
 
@@ -76,7 +71,7 @@ def parse(String description)
                 i.remove();
             }
         }
-        payload.deviceMacs.findAll{ !state.deviceList.containsKey(it) }?.each{ state.deviceList[it] = [upToDate:false]}
+        payload.deviceMacs.findAll{deviceMac -> !state.deviceList.any{it.mac==deviceMac} }?.each{ state.deviceList << [mac:it, upToDate:false]}
         refreshDevicesWithRetry()
     }
 
@@ -90,9 +85,11 @@ def parse(String description)
             def deviceMac = withUpdate.find("^[a-f|0-9]*")
             
             logTrace("deviceMac ${deviceMac}")
-           
-            state.deviceList[deviceMac].isBidirectional = payload.bidirectional
-            state.deviceList[deviceMac].upToDate = true
+
+            state.deviceList.findAll{it.mac == deviceMac}.each{ 
+                    it.isBidirectional = payload.bidirectional
+                    it.upToDate = true
+                }
         }
         catch(ex)
         {
@@ -106,8 +103,8 @@ def parse(String description)
 
 def updateDeviceCounts()
 {
-    def deviceCount = state.deviceList.count{true}
-    def upToDateCount = state.deviceList.count{k, v -> v.upToDate}
+    def deviceCount = state.deviceList.size()
+    def upToDateCount = state.deviceList.count{it.upToDate}
     sendEvent(name: "deviceCount", value: deviceCount)
     sendEvent(name: "uptoDateDevices", value: upToDateCount)
 
@@ -123,7 +120,7 @@ def refreshDevicesWithRetry()
         return
     }
 
-    state.deviceList.findAll{deviceMac, v -> !v.upToDate}?.each{publish([command:"updateDevice", mac:it.key])}  
+    state.deviceList.findAll{!it.upToDate}?.each{publish([command:"updateDevice", mac:it.mac])}  
 
     def retryDelay = (Integer)(2 + (1 + counts.deviceCount - counts.upToDateCount)/2)
     runIn(retryDelay, refreshDevicesWithRetry)
@@ -131,7 +128,7 @@ def refreshDevicesWithRetry()
 
 def refresh()
 {
-    state.deviceList.each{k, v -> v.upToDate = false}
+    state.deviceList.each{it.upToDate = false}
     refreshWithRetry([retryInterval:10])
 }
 
@@ -162,6 +159,7 @@ def publish(Map payload)
 
 def installed()
 {
+    state.deviceList = []
     initialize();
 }
 
