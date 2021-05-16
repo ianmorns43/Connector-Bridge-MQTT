@@ -122,13 +122,13 @@ def refreshDevicesWithRetry()
 
     state.deviceList.findAll{!it.upToDate}?.each{publish([command:"updateDevice", mac:it.mac])}  
 
-    def retryDelay = (Integer)(2 + (1 + counts.deviceCount - counts.upToDateCount)/2)
+    def retryDelay = (Integer)(20 + (1 + counts.deviceCount - counts.upToDateCount)/2)
     runIn(retryDelay, refreshDevicesWithRetry)
 }
 
 def refresh()
 {
-    state.deviceList.each{it.upToDate = false}
+    //state.deviceList.each{it.upToDate = false}
     refreshWithRetry([retryInterval:10])
 }
 
