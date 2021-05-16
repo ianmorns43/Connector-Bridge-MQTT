@@ -75,7 +75,7 @@ mqttMessage ConnectorUdp::loop()
         }
         else if(messageType == "ReadDeviceAck") //When asked for
         {            
-            return createDeviceMessage("update", doc);
+            return createDeviceMessage("status", doc);
         }
 
         Serial.printf("Unrecognised udp: %s\r\n", packet.c_str());

@@ -73,7 +73,7 @@ def parse(String description)
         sendEvent(name:"position", value: attributes.position)
     }
 
-    if(topic.endsWith("update"))
+    if(topic.endsWith("status"))
     {
         unschedule(refreshTimeout)
         setShadeBasedOnPosition(attributes.position)
@@ -152,7 +152,7 @@ def refreshWithoutRetry()
 
 def refreshAction()
 {
-    return [command:"updateDevice", includeKey:false]    
+    return [command:"getStatus", includeKey:false]    
 }
 
 /*

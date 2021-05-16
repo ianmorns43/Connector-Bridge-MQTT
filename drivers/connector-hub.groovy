@@ -75,13 +75,11 @@ def parse(String description)
         refreshDevicesWithRetry()
     }
 
-    if(topic.endsWith("/update"))
+    if(topic.endsWith("/status"))
     {
         try
         {
-            def withUpdate = topic.find("[a-f|0-9]*/update")
-            logTrace("withUpdate ${withUpdate}")
-
+            def withUpdate = topic.find("[a-f|0-9]*/status")
             def deviceMac = withUpdate.find("^[a-f|0-9]*")
             
             logTrace("deviceMac ${deviceMac}")
@@ -120,7 +118,7 @@ def refreshDevicesWithRetry()
         return
     }
 
-    state.deviceList.findAll{!it.upToDate}?.each{publish([command:"updateDevice", mac:it.mac])}  
+    state.deviceList.findAll{!it.upToDate}?.each{publish([command:"getStatus", mac:it.mac])}  
 
     def retryDelay = (Integer)(20 + (1 + counts.deviceCount - counts.upToDateCount)/2)
     runIn(retryDelay, refreshDevicesWithRetry)
