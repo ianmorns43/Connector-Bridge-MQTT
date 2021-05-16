@@ -56,7 +56,7 @@ def mainPage()
                 paragraph "To be valid, the selected Broker must be a device of type 'MQTT Broker'."
             }
             input "brokerValidationResult", "text", title: "", multiple: false, required: true, submitOnChange: true, description: validationResult
-            input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, required: true, defaultValue: "dooya_connector_hub"
+            input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, required: true, defaultValue: "DD7002B"
             input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
         }
 
