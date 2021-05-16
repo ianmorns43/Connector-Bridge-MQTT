@@ -166,10 +166,7 @@ def installed()
 def uninstalled()
 {
     logTrace("Uninstalling")
-    if(interfaces.mqtt.isConnected())
-    {
-        interfaces.mqtt.disconnect()
-    }
+    unsubscribeAndDisconnect()
 }
 
 def updated()
@@ -213,12 +210,17 @@ def subscritionTopics()
 public configure()
 {
     logTrace("Broker details updated")
+    unsubscribeAndDisconnect()
+    refresh()
+}
+
+private unsubscribeAndDisconnect()
+{
     if(interfaces.mqtt.isConnected())
     {
         subscritionTopics().each{ topic -> interfaces.mqtt.unsubscribe(topic) }
         interfaces.mqtt.disconnect()
     }
-    refresh()
 }
 
 public brokerStatusChanged(evt)
