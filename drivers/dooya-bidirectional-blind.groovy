@@ -349,6 +349,11 @@ def connectAndSubscribe()
         try
         {
             interfaces.mqtt.connect(connectionDetails.path, device.deviceNetworkId, connectionDetails.username, connectionDetails.password)
+            subscritionTopics().each
+            { 
+                topic -> interfaces.mqtt.subscribe(topic)
+                logTrace("Subscribed to: ${topic}")
+            }
         }
         catch(exception)
         {
@@ -356,12 +361,6 @@ def connectAndSubscribe()
             sendEvent(name: "hubStatus", value: "unknown")
         }
     }    
-    
-    subscritionTopics().each
-    { 
-        topic -> interfaces.mqtt.subscribe(topic)
-        logTrace("Subscribed to: ${topic}")
-    }
 }
 
 def mqttClientStatus(String message)
