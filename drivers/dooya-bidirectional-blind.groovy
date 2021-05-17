@@ -92,16 +92,6 @@ def parse(String description)
     }
 }
 
-public setMac(mac)
-{
-    device.updateSetting("mac", mac)
-}
-
-public getMac()
-{
-    return settings.mac
-}
-
 private updateAttribute(Map attributes, String attributeName)
 {
     if(attributes.containsKey(attributeName))
@@ -247,8 +237,8 @@ def publish(Map action)
 
     reconectIfNessecary()
 
-    def details = parent.getConnectionDetails()
-    def payload = [command:command, mac:details.mac]
+    def details = parent.getHubDetails()
+    def payload = [command:command, mac:getMac()]
 
     if(includeKey)
     {
@@ -296,6 +286,10 @@ def initialize()
         runIn(1800, "disableLogging");
     }
 
+    if(settings.mac && settings.mac != device.data.lastSubscribedMac)
+    {
+        configure()
+    }
     startPing()
 }
 
@@ -309,15 +303,30 @@ def startPing()
     schedule("${second} ${minute}/${refreshInterval} * ? * * *", "refreshWithoutRetry");
 }
 
-def subscritionTopics()
+def subscritionTopics(mac)
 {
-    def details = parent.getConnectionDetails()
+    def details = parent.getHubDetails()
     def hubTopic = details.hubTopic
 
     topics = []
-    topics << "${details.hubTopic}/${details.mac}/+"
+    topics << "${details.hubTopic}/${mac}/+"
     topics << "${details.hubTopic}/lwt"
     return topics
+}
+
+
+public setMac(mac)
+{
+    device.updateSetting("mac", mac)
+    if(mac != device.data.lastSubscribedMac)
+    {
+        configure()
+    }
+}
+
+public getMac()
+{
+    return settings.mac
 }
 
 public configure()
@@ -325,7 +334,7 @@ public configure()
     logTrace("Broker details updated")
     if(interfaces.mqtt.isConnected())
     {
-        subscritionTopics().each{ topic -> interfaces.mqtt.unsubscribe(topic) }
+        subscritionTopics(device.data.lastSubscribedMac).each{ topic -> interfaces.mqtt.unsubscribe(topic) }
         interfaces.mqtt.disconnect()
     }
     refresh()
@@ -354,17 +363,20 @@ def reconectIfNessecary()
 
 def connectAndSubscribe()
 {
-    def connectionDetails = parent.getConnectionDetails()
+    def connectionDetails = parent.getHubDetails()
     if(!interfaces.mqtt.isConnected())
     {
         try
         {
+            def mac = getMac()
             interfaces.mqtt.connect(connectionDetails.path, device.deviceNetworkId, connectionDetails.username, connectionDetails.password)
-            subscritionTopics().each
+            subscritionTopics(mac).each
             { 
                 topic -> interfaces.mqtt.subscribe(topic)
                 logTrace("Subscribed to: ${topic}")
             }
+
+            device.updateDataValue("lastSubscribedMac", mac)
         }
         catch(exception)
         {
