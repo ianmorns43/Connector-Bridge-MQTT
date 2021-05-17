@@ -65,6 +65,7 @@ def parse(String description)
 
     if(topic.endsWith("/deviceList"))
     {
+        device.updateDataValue("mac", payload.mac)
         unschedule(refreshWithRetry)
         for (def i = set.iterator(); i.hasNext();)
         {
@@ -87,7 +88,15 @@ def parse(String description)
             
             logTrace("deviceMac ${deviceMac}")
 
-            state.deviceList.findAll{it.mac == deviceMac}.each{it.isBidirectional = payload.bidirectional}
+            state.deviceList.findAll{it.mac == deviceMac}.each
+            {
+                it.isBidirectional = payload.bidirectional
+
+                if(payload.shadeType)
+                {
+                    it.shadeType = payload.shadeType
+                }
+            }
         }
         catch(ex)
         {
@@ -97,6 +106,16 @@ def parse(String description)
 
         updateDeviceCounts()
     }
+}
+
+public getMac()
+{
+    return device.data.mac
+}
+
+public getDeviceList()
+{
+    return state.deviceList
 }
 
 def updateDeviceCounts()

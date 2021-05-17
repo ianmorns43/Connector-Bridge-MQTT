@@ -28,22 +28,27 @@ definition(
 preferences
 {  
     page(name: "mainPage")
+    page(name: "addBlindsPage")
 }
 
 def mainPage()
 {
     def validationResult = validateBroker()
-    updateHubDevice()
+    def hubDevice = updateHubDevice()
     
-	def page = dynamicPage(name: "mainPage",  title:"<b>Connector Hub Setup</b>\n", uninstall: true, install: true)
+	def page = dynamicPage(name: "mainPage",  title:"<b>Setup</b>\n", uninstall: true, install: true)
     {
-        section("Connector Hub Setup")
+        def hubIp = location?.hubs[0]?.localIP
+        def title = (hubIp && hubDevice) ? "<b><a href='http://${hubIp}/device/edit/${hubDevice.id}' target='_blank'>Connector Hub</a><b>" :
+                    "<b>Connector Hub</b>"
+
+        section(title)
         {
             input "hubName", "text", title: "Hub Name", multiple: false, submitOnChange: true, required: true
             input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, submitOnChange: true, required: true, defaultValue: "DD7002B"
             input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
         }
-        section("Mqtt Broker Setup")
+        section("<b>Mqtt Broker</b>")
         {
             input "mqttBroker", "capability.healthCheck", title: "MQTT Broker Device", multiple: false, required: true, submitOnChange: true
             if(!settings.brokerValidationResult)
@@ -53,18 +58,78 @@ def mainPage()
             input "brokerValidationResult", "text", title: "", multiple: false, required: true, submitOnChange: true, description: validationResult
         }
 
-        section("<b>Window Shade Remotes</b>")
+        //TODO Some info about whether the hub is up to date or not
+
+        if(hubDevice)
         {
-            app(name: "windowShadeRemote", appName: "Dooya Window Shade", namespace: "ianmorns_rfremote", title: "Add a new window shade remote", multiple: true)
+            section("<b>Add blinds</b>")
+            {
+                href "addBlindsPage", title: "<b>Add Blinds</b>", description: "Select blinds to mount on Hubitat."
+            }
         }
 
-        section()
+        section("Logging")
         {
             input "enableLogging", "bool", title: "Enable debug logging for 30 minutes", multiple: false, defaultValue: false
         }
     }
     
     return page;
+}
+
+
+def addBlindsPage()
+{
+    def deviceList = getHubDevice().getDeviceList()
+    //Only doing biDirecitonal motors for now. Unidirectional wont have shadeType
+    def unasignedDevices = [:]
+    
+    deviceList.findAll{it.isBidirectional}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each{ unasigned ->
+        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: Bi-directional ${unasigned.shadeType}"
+
+    }
+
+    def deviceCount = unasignedDevices.size()
+    
+	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", uninstall: false, install: false)
+    {
+        section()
+        {
+            input ("blindToAdd", "enum",
+                        required: false,
+                        multiple: false,
+                        title: "There ${deviceCount == 1? "is":"are"} ${deviceCount} ${deviceCount == 1? 'blind':'blinds'} which may be installed on Hubitat",
+                        description: "Use the dropdown to select blind to add Hubitat.",
+                        submitOnChange: true,
+                        options: unasignedDevices)
+
+            if(settings.blindToAdd)
+            {
+                input "blindName", "text", title: "Blind name", required: true, submitOnChange: true
+            
+
+                if(settings.blindName)
+                {
+                    //TODO check blind type, currently there is only bidirectional
+                    input "addTheBlind", "bool", title:"Click to add this blind", submitOnChange: true, defaultValue: false
+
+                    if(settings.addTheBlind)
+                    {
+                        def child = addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
+                        child.setMac(settings.blindToAdd)
+                        app.updateSetting("addTheBlind", false)
+                        app.removeSetting("blindName")
+                        app.removeSetting("blindToAdd")
+                    }
+                }
+            }
+        }
+
+        logTrace("Blinds to add: ${blindToAdd}")
+    }
+
+    return page
+    
 }
 
 def updateHubDevice()
@@ -75,6 +140,8 @@ def updateHubDevice()
         hubDevice = app.addChildDevice("ianmorns_rfremote", "Connector Hub", getHubDeviceId(), [label: settings.hubName, isComponent: true])
         hubDevice.configure()
     }
+
+    return hubDevice
 }
 
 def validateBroker()

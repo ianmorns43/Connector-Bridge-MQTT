@@ -32,6 +32,7 @@ metadata {
     {
         input "refreshInterval", "number", title: "Refresh polling interval (min)", required: true, defaultValue: 20
         input "enableLogging", "bool", title: "Enable debug logging for 30 minutes", multiple: false, defaultValue: true
+        input "mac", "text", title: "Device Mac Address (changing this value could unlink device from hub)", multiple: false
     }
 }
 
@@ -89,6 +90,16 @@ def parse(String description)
         unschedule(movementTimeout)
         setShadeBasedOnPosition(attributes.position)
     }
+}
+
+public setMac(mac)
+{
+    device.updateSetting("mac", mac)
+}
+
+public getMac()
+{
+    return settings.mac
 }
 
 private updateAttribute(Map attributes, String attributeName)
