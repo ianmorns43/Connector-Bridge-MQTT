@@ -71,7 +71,7 @@ def parse(String description)
                 i.remove();
             }
         }
-        payload.deviceMacs.findAll{deviceMac -> !state.deviceList.any{it.mac==deviceMac} }?.each{ state.deviceList << [mac:it, upToDate:false]}
+        payload.deviceMacs.findAll{deviceMac -> !state.deviceList.any{it.mac==deviceMac} }?.each{ state.deviceList << [mac:it]}
         refreshDevicesWithRetry()
     }
 
@@ -84,10 +84,7 @@ def parse(String description)
             
             logTrace("deviceMac ${deviceMac}")
 
-            state.deviceList.findAll{it.mac == deviceMac}.each{ 
-                    it.isBidirectional = payload.bidirectional
-                    it.upToDate = true
-                }
+            state.deviceList.findAll{it.mac == deviceMac}.each{it.isBidirectional = payload.bidirectional}
         }
         catch(ex)
         {
@@ -102,7 +99,7 @@ def parse(String description)
 def updateDeviceCounts()
 {
     def deviceCount = state.deviceList.size()
-    def upToDateCount = state.deviceList.count{it.upToDate}
+    def upToDateCount = state.deviceList.count{it.isBidirectional != null}
     sendEvent(name: "deviceCount", value: deviceCount)
     sendEvent(name: "uptoDateDevices", value: upToDateCount)
 
@@ -118,7 +115,7 @@ def refreshDevicesWithRetry()
         return
     }
 
-    state.deviceList.findAll{!it.upToDate}?.each{publish([command:"getStatus", mac:it.mac])}  
+    state.deviceList.findAll{it.isBidirectional == null}?.each{publish([command:"getStatus", mac:it.mac])}  
 
     def retryDelay = (Integer)(20 + (1 + counts.deviceCount - counts.upToDateCount)/2)
     runIn(retryDelay, refreshDevicesWithRetry)
@@ -126,7 +123,7 @@ def refreshDevicesWithRetry()
 
 def refresh()
 {
-    //state.deviceList.each{it.upToDate = false}
+    //state.deviceList.each{it.isBidirectional = null}
     refreshWithRetry([retryInterval:10])
 }
 
