@@ -26,6 +26,7 @@ metadata {
         
         command "Reset"
 
+        attribute "lastRefreshed", "text"
         attribute "deviceCount", "NUMBER"
         attribute "uptoDateDevices", "NUMBER"
         attribute "hubStatus", "ENUM", ["online","offline","unknown"]
@@ -114,6 +115,7 @@ def refreshDevicesWithRetry()
     if(counts.upToDateCount >= counts.deviceCount)
     {
         //All devices are uptodate, we're done
+        sendEvent(name:"lastRefreshed", value: new Date(now()))
         return
     }
 
