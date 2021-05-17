@@ -23,6 +23,8 @@ metadata {
         capability "Refresh"
         capability "Actuator"
         capability "SignalStrength"
+        
+        command "Reset"
 
         attribute "deviceCount", "NUMBER"
         attribute "uptoDateDevices", "NUMBER"
@@ -119,6 +121,13 @@ def refreshDevicesWithRetry()
 
     def retryDelay = (Integer)(20 + (1 + counts.deviceCount - counts.upToDateCount)/2)
     runIn(retryDelay, refreshDevicesWithRetry)
+}
+
+def Reset()
+{
+    state.deviceList = []
+    updateDeviceCounts()
+    refresh()
 }
 
 def refresh()
