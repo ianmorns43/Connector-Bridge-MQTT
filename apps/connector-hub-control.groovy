@@ -29,6 +29,7 @@ preferences
 {  
     page(name: "mainPage")
     page(name: "addBlindsPage")
+    page(name: "removeBlindsPage")
 }
 
 def mainPage()
@@ -66,7 +67,11 @@ def mainPage()
             {
                 href "addBlindsPage", title: "<b>Add Blinds</b>", description: "Select blinds to mount on Hubitat."
             }
-        }
+            section("<b>Remove blinds</b>")
+            {
+                href "removeBlindsPage", title: "<b>Remove Blinds</b>", description: "Select blinds to unmount from Hubitat."
+            }
+        }       
 
         section("Logging")
         {
@@ -82,17 +87,19 @@ def addBlindsPage()
 {
     def deviceList = getHubDevice().getDeviceList()
     //Only doing biDirecitonal motors for now. Unidirectional wont have shadeType
-    def unasignedDevices = [:]
-    
-    deviceList.findAll{it.isBidirectional}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each{ unasigned ->
-        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: Bi-directional ${unasigned.shadeType}"
 
-    }
-
-    def deviceCount = unasignedDevices.size()
     
 	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", uninstall: false, install: false)
     {
+        def unasignedDevices = [:]
+
+        deviceList.findAll{it.isBidirectional}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each{ unasigned ->
+        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: Bi-directional ${unasigned.shadeType}"
+
+        }
+
+        def deviceCount = unasignedDevices.size()
+        
         section()
         {
             input ("blindToAdd", "enum",
@@ -130,6 +137,59 @@ def addBlindsPage()
 
     return page
     
+}
+
+def removeBlindsPage()
+{
+    logTrace("Current devices: ${currentDevices}")
+    
+	def page = dynamicPage(name: "removeBlindsPage",  title:"<b>Select blinds to delete</b>\n", uninstall: false, install: false)
+    {
+        def currentDevices = blindsWhichCanBeDeleted()
+        def deviceCount = currentDevices.size()
+
+        section()
+        {
+            input ("blindsToDelete", "enum",
+                        required: false,
+                        multiple: true,
+                        title: "There ${deviceCount == 1? "is":"are"} ${deviceCount} ${deviceCount == 1? 'blind':'blinds'} currently installed on Hubitat",
+                        description: "Use the dropdown to select blind to delete.",
+                        submitOnChange: true,
+                        options: currentDevices)
+
+            if(settings.blindsToDelete)
+            {
+
+                input "deleteTheBlinds", "bool", title:"Click to delete this blind (WARNING this cannot be undone", submitOnChange: true, defaultValue: false
+
+                if(settings.deleteTheBlinds)
+                {
+                    settings.blindsToDelete.each{app.deleteChildDevice(it)}
+
+                    app.updateSetting("deleteTheBlinds", false)
+                    app.removeSetting("blindsToDelete")
+                }
+            }
+        }
+
+        logTrace("Blinds to remove: ${settings.blindsToDelete}")
+    }
+
+    return page
+    
+}
+
+def blindsWhichCanBeDeleted()
+{
+    def currentDevices = [:]
+    
+    app.getChildDevices().findAll{it.deviceNetworkId != getHubDeviceId() }.each{ blind ->
+        currentDevices[blind.deviceNetworkId] = "${blind.label}, Bi-directional (${blind.getMac()})"
+
+    }
+
+    return currentDevices
 }
 
 def updateHubDevice()
