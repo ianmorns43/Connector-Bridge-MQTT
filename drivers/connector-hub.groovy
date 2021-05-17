@@ -206,7 +206,7 @@ def subscritionTopics()
 
     topics = []
     topics << "${details.hubTopic}/hub/+"
-    topics << "${details.hubTopic}/+/update"
+    topics << "${details.hubTopic}/+/status"
     topics << "${details.hubTopic}/lwt"
     return topics
 }

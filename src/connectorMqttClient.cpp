@@ -78,7 +78,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     {
         messageQueue->queueMulticastDeviceListRequest();
     }
-    else if(command == "updateDevice")
+    else if(command == "getStatus")
     {
         if(mac == nullptr)
         {
