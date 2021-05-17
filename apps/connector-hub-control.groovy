@@ -32,23 +32,18 @@ preferences
 
 def mainPage()
 {
-    def hubDevice = getHubDevice()
-    logTrace("HubDevice ${hubDevice}")
-    if(!hubDevice) //TODO no point in creating hubDevice until mqtt details are set
-    {
-        hubDevice = app.addChildDevice("ianmorns_rfremote", "Connector Hub", getHubDeviceId(), [isComponent: true])
-        hubDevice.configure()
-    }
-    else
-    {
-        hubDevice.configure()
-    }
-
     def validationResult = validateBroker()
+    updateHubDevice()
     
 	def page = dynamicPage(name: "mainPage",  title:"<b>Connector Hub Setup</b>\n", uninstall: true, install: true)
     {
-        section("Hub Setup")
+        section("Connector Hub Setup")
+        {
+            input "hubName", "text", title: "Hub Name", multiple: false, submitOnChange: true, required: true
+            input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, submitOnChange: true, required: true, defaultValue: "DD7002B"
+            input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
+        }
+        section("Mqtt Broker Setup")
         {
             input "mqttBroker", "capability.healthCheck", title: "MQTT Broker Device", multiple: false, required: true, submitOnChange: true
             if(!settings.brokerValidationResult)
@@ -56,8 +51,6 @@ def mainPage()
                 paragraph "To be valid, the selected Broker must be a device of type 'MQTT Broker'."
             }
             input "brokerValidationResult", "text", title: "", multiple: false, required: true, submitOnChange: true, description: validationResult
-            input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, required: true, defaultValue: "DD7002B"
-            input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
         }
 
         section("<b>Window Shade Remotes</b>")
@@ -72,6 +65,16 @@ def mainPage()
     }
     
     return page;
+}
+
+def updateHubDevice()
+{
+    def hubDevice = getHubDevice()
+    if(!hubDevice && settings.brokerValidationResult && settings.hubTopic && settings.hubName)
+    {
+        hubDevice = app.addChildDevice("ianmorns_rfremote", "Connector Hub", getHubDeviceId(), [label: settings.hubName, isComponent: true])
+        hubDevice.configure()
+    }
 }
 
 def validateBroker()
@@ -121,12 +124,14 @@ def initialize()
         runIn(1800, "disableLogging");
     }
 
+    app.updateLabel(settings.hubName);
+
     subscribe(settings.mqttBroker, "brokerDetails", updateConnections)
     subscribe(settings.mqttBroker, "brokerStatus", brokerStatusChanged)
 
-    if(settings.hubTopic != app.getState().previoushubTopic)
+    if(settings.hubTopic != app.state.previoushubTopic)
     {
-        app.getState().previoushubTopic = settings.hubTopic;
+        app.state.previoushubTopic = settings.hubTopic;
         updateConnections(null)
     }
 }
