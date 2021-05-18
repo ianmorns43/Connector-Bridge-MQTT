@@ -29,6 +29,7 @@ preferences
 {  
     page(name: "mainPage")
     page(name: "addBlindsPage")
+    page(name: "confirmBlindAddedPage")
     page(name: "removeBlindsPage")
 }
 
@@ -86,10 +87,13 @@ def mainPage()
 def addBlindsPage()
 {
     def deviceList = getHubDevice().getDeviceList()
-    //Only doing biDirecitonal motors for now. Unidirectional wont have shadeType
+    def nextOrDone = settings.blindToAdd && settings.blindName
 
-    
-	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", uninstall: false, install: false)
+    def paramName = nextOrDone ? "nextPage" : "uninstall" //Make uninstall the default, will do nothing and show Done button
+    def paramValue = nextOrDone ? "confirmBlindAddedPage" : false
+
+    state.blindAdded = false    
+	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", "${paramName}": paramValue)
     {
         def unasignedDevices = [:]
 
@@ -99,7 +103,7 @@ def addBlindsPage()
         }
 
         def deviceCount = unasignedDevices.size()
-        
+
         section()
         {
             input ("blindToAdd", "enum",
@@ -113,22 +117,51 @@ def addBlindsPage()
             if(settings.blindToAdd)
             {
                 input "blindName", "text", title: "Blind name", required: true, submitOnChange: true
+            }
+
+            if(settings.blindToAdd && settings.blindName)
+            {
+                paragraph "Read to add '${settings.blindName}'. Click 'Next' to add the blind."
+            }
+            else
+            {
+                paragraph "Complete the required fields or click 'Done' to return to the main page."
+            }
+        }
+
+        logTrace("Blinds to add: ${blindToAdd}")
+    }
+
+    return page
+}
+
+def confirmBlindAddedPage()
+{   
+	def page = dynamicPage(name: "confirmBlindAddedPage",  title:"<b>Blind added</b>\n", uninstall: false, install: false)
+    {       
+        section()
+        {
+            logTrace ("Building")
+            def newBlindName = settings.blindName
+            if(!state.blindAdded && settings.blindToAdd && settings.blindName)
+            {
+                logTrace ("Adding ${settings.blindName}")
+                def child = addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
+                child.setMac(settings.blindToAdd)
+
+                app.updateSetting("addTheBlind", false)
+                app.removeSetting("blindName")
+                app.removeSetting("blindToAdd")
+                state.blindAdded = true
+            }
             
-
-                if(settings.blindName)
-                {
-                    //TODO check blind type, currently there is only bidirectional
-                    input "addTheBlind", "bool", title:"Click to add this blind", submitOnChange: true, defaultValue: false
-
-                    if(settings.addTheBlind)
-                    {
-                        def child = addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
-                        child.setMac(settings.blindToAdd)
-                        app.updateSetting("addTheBlind", false)
-                        app.removeSetting("blindName")
-                        app.removeSetting("blindToAdd")
-                    }
-                }
+            if(state.blindAdded)
+            {
+                paragraph "Blind ${newBlindName} added successfully. Click 'Done' to return to previouse page."
+            }
+            else
+            {
+                paragraph "Something went wrong! Click 'Done' to return to previouse page."
             }
         }
 
