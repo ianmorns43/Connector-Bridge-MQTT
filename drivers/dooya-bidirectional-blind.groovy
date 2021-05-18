@@ -334,7 +334,6 @@ public configure()
     logTrace("Broker details updated")
     if(interfaces.mqtt.isConnected())
     {
-        subscritionTopics(device.data.lastSubscribedMac).each{ topic -> interfaces.mqtt.unsubscribe(topic) }
         interfaces.mqtt.disconnect()
     }
     refresh()
@@ -364,7 +363,8 @@ def reconectIfNessecary()
 def connectAndSubscribe()
 {
     def connectionDetails = parent.getHubDetails()
-    if(!interfaces.mqtt.isConnected())
+    def mac = getMac()
+    if(!interfaces.mqtt.isConnected() && mac)
     {
         try
         {
