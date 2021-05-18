@@ -31,6 +31,8 @@ preferences
     page(name: "addBlindsPage")
     page(name: "confirmBlindAddedPage")
     page(name: "removeBlindsPage")
+    page(name: "removeBlindsAreYouSurePage")
+    page(name: "confirmBlindsRemoved")
 }
 
 def mainPage()
@@ -88,12 +90,10 @@ def addBlindsPage()
 {
     def deviceList = getHubDevice().getDeviceList()
     def nextOrDone = settings.blindToAdd && settings.blindName
-
-    def paramName = nextOrDone ? "nextPage" : "uninstall" //Make uninstall the default, will do nothing and show Done button
-    def paramValue = nextOrDone ? "confirmBlindAddedPage" : false
+    def paramValue = nextOrDone ? "confirmBlindAddedPage" : "mainPage"
 
     state.blindAdded = false    
-	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", "${paramName}": paramValue)
+	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", nextPage: paramValue)
     {
         def unasignedDevices = [:]
 
@@ -125,7 +125,7 @@ def addBlindsPage()
             }
             else
             {
-                paragraph "Complete the required fields or click 'Done' to return to the main page."
+                paragraph "Complete the required fields or click 'Next' to return to the main page."
             }
         }
 
@@ -157,11 +157,11 @@ def confirmBlindAddedPage()
             
             if(state.blindAdded)
             {
-                paragraph "Blind ${newBlindName} added successfully. Click 'Done' to return to previouse page."
+                paragraph "Blind ${newBlindName} added successfully. Click 'Done' to return to previous page."
             }
             else
             {
-                paragraph "Something went wrong! Click 'Done' to return to previouse page."
+                paragraph "Something went wrong! Click 'Done' to return to previous page."
             }
         }
 
@@ -174,9 +174,12 @@ def confirmBlindAddedPage()
 
 def removeBlindsPage()
 {
-    logTrace("Current devices: ${currentDevices}")
+    app.removeSetting("confirmDeleteTheBlinds")
+    def nextOrDone = !!settings.blindsToDelete
+    def paramValue = nextOrDone ? "removeBlindsAreYouSurePage" : "mainPage"
+
     
-	def page = dynamicPage(name: "removeBlindsPage",  title:"<b>Select blinds to delete</b>\n", uninstall: false, install: false)
+	def page = dynamicPage(name: "removeBlindsPage",  title:"<b>Select blinds to delete</b>\n", nextPage: paramValue)
     {
         def currentDevices = blindsWhichCanBeDeleted()
         def deviceCount = currentDevices.size()
@@ -187,23 +190,77 @@ def removeBlindsPage()
                         required: false,
                         multiple: true,
                         title: "There ${deviceCount == 1? "is":"are"} ${deviceCount} ${deviceCount == 1? 'blind':'blinds'} currently installed on Hubitat",
-                        description: "Use the dropdown to select blind to delete.",
+                        description: "Use the dropdown to select blinds to delete.",
                         submitOnChange: true,
                         options: currentDevices)
 
-            if(settings.blindsToDelete)
+            if(nextOrDone)
             {
-
-                input "deleteTheBlinds", "bool", title:"Click to delete this blind (WARNING this cannot be undone", submitOnChange: true, defaultValue: false
-
-                if(settings.deleteTheBlinds)
-                {
-                    settings.blindsToDelete.each{app.deleteChildDevice(it)}
-
-                    app.updateSetting("deleteTheBlinds", false)
-                    app.removeSetting("blindsToDelete")
-                }
+                paragraph "Click 'Next' to confirm and delete blinds."
             }
+            else
+            {
+                paragraph "Click 'Next' to return to main page."
+            }
+        }
+
+        logTrace("Blinds to remove: ${settings.blindsToDelete}")
+    }
+
+    return page
+    
+}
+
+def removeBlindsAreYouSurePage()
+{
+    state.blindsRemoved = false
+    def nextOrDone = !!settings.confirmDeleteTheBlinds
+    def paramValue = nextOrDone ? "confirmBlindsRemoved" : "removeBlindsPage"
+    def page = dynamicPage(name: "removeBlindsAreYouSurePage",  title:"<b>Confirm Delete</b>\n", nextPage: paramValue)
+    {
+        section()
+        {
+            def blindsToDeleteCount = settings.blindsToDelete?.size()
+            paragraph "Ready to remove ${blindsToDeleteCount} blind${blindsToDeleteCount > 1 ? 's':''}. Warning, if you continue then any automations using these blinds may no longer function correctly"
+            paragraph "Select the control below to confirm you wish to continue"
+            input "confirmDeleteTheBlinds", "bool", title:"Click to confirm", submitOnChange: true, defaultValue: false
+
+            if(nextOrDone)
+            {
+                paragraph "Click 'Next' to confirm and delete blinds."
+            }
+            else
+            {
+                paragraph "Click 'Next' to return to previous page."
+            }
+        }
+
+        logTrace("Blinds to remove: ${settings.blindsToDelete}")
+    }
+
+    return page
+    
+}
+
+def confirmBlindsRemoved()
+{
+	def page = dynamicPage(name: "confirmBlindsRemoved",  title:"<b>Delete Complete</b>\n", nextPage: "mainPage")
+    {
+        section()
+        {
+            def removed = 0
+            if(settings.confirmDeleteTheBlinds && !state.blindsRemoved)
+            {
+                settings.blindsToDelete.each{app.deleteChildDevice(it)}
+                removed = settings.blindsToDelete.size()
+                state.blindsRemoved = true
+
+                app.updateSetting("confirmDeleteTheBlinds", false)
+                app.removeSetting("blindsToDelete")
+            }
+
+            paragraph "${removed} blind${removed > 1 ? 's':''} deleted."
+            paragraph "Click 'Next' to return to main page."
         }
 
         logTrace("Blinds to remove: ${settings.blindsToDelete}")
