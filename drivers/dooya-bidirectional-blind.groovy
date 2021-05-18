@@ -231,6 +231,10 @@ def movementTimeout(data)
 
 def publish(Map action)
 {
+    if(!getMac())
+    {
+        return
+    }
     String command = action.command
     Boolean includeKey = action.includeKey
     Map parameters = action.parameters
@@ -368,7 +372,6 @@ def connectAndSubscribe()
     {
         try
         {
-            def mac = getMac()
             interfaces.mqtt.connect(connectionDetails.path, device.deviceNetworkId, connectionDetails.username, connectionDetails.password)
             subscritionTopics(mac).each
             { 
