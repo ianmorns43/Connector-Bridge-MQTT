@@ -57,7 +57,7 @@ def parse(String description)
     if(topic.endsWith("/heartbeat"))
     {
         sendEvent(name:"rssi", value:payload.rssi)
-        if(payload.deviceCount > device.currentValue("deviceCount"))
+        if(payload.deviceCount != device.currentValue("deviceCount"))
         {
             refresh()
         }
@@ -65,17 +65,18 @@ def parse(String description)
 
     if(topic.endsWith("/deviceList"))
     {
-        device.updateDataValue("mac", payload.mac)
         unschedule(refreshWithRetry)
-        for (def i = set.iterator(); i.hasNext();)
-        {
-            def key = i.next().key
-            if (!payload.deviceMacs.any{it == key}) 
-            {
-                i.remove();
-            }
-        }
+        device.updateDataValue("mac", payload.mac)
+
+        //Add any new devices to the stored list
         payload.deviceMacs.findAll{deviceMac -> !state.deviceList.any{it.mac==deviceMac} }?.each{ state.deviceList << [mac:it]}
+
+        //If the 2 lists are different sizes, that means 1 or more devices have been removed. Remove them from our list
+        if(state.deviceList.size() > payload.deviceMacs.size())
+        {
+            state.deviceList = state.deviceList.findAll{ stored -> payload.deviceMacs.any{macOnHub -> stored.mac == macOnHub}}
+        }
+       
         refreshDevicesWithRetry()
     }
 
@@ -149,6 +150,9 @@ def Reset()
     state.deviceList = []
     updateDeviceCounts()
     refresh()
+
+    //state.deviceList << [shadeType:"Roller Blinds", isBidirectional:true, mac:"f008d1edd4ec0001"]
+    //updateDeviceCounts()
 }
 
 def refresh()
