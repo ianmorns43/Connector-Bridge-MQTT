@@ -66,13 +66,23 @@ def mainPage()
 
         if(hubDevice)
         {
-            section("<b>Add blinds</b>")
+            def unasignedDevices = getDevicesAvailableToAdd()
+            def activeBlinds = blindsWhichCanBeDeleted(true)
+            def inactiveBlinds = blindsWhichCanBeDeleted(false)
+            section("<b>Summary</b>")
             {
-                href "addBlindsPage", title: "<b>Add Blinds</b>", description: "Select blinds to mount on Hubitat."
+                def p = pluralize(unasignedDevices.size())
+                paragraph  "There ${p.isAre} ${p.count} blind${p.s} available on the Connector Hub which can be installed on Hubitat."
+                p = pluralize(activeBlinds.size())
+                paragraph  "There ${p.isAre} ${p.count} active blind${p.s} currently installed on Hubitat."
+                p = pluralize(inactiveBlinds.size())
+                paragraph  "There ${p.isAre} ${p.count} inactive blind${p.s} currently installed on Hubitat."
+
             }
-            section("<b>Remove blinds</b>")
+            section("<b>Add/Remove blinds</b>")
             {
-                href "removeBlindsPage", title: "<b>Remove Blinds</b>", description: "Select blinds to unmount from Hubitat."
+                href "addBlindsPage", title: "<b>Add Blinds</b>", description: "Select blinds to install on Hubitat."
+                href "removeBlindsPage", title: "<b>Remove Blinds</b>", description: "Select blinds to uninstall from Hubitat."
             }
         }       
 
@@ -85,6 +95,10 @@ def mainPage()
     return page;
 }
 
+def pluralize(count)
+{
+    return [isAre: (count == 1 ? "is":"are"), count:count, s: (count == 1 ? "":"s")]
+}
 
 def addBlindsPage()
 {
