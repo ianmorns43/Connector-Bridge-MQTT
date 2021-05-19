@@ -88,19 +88,15 @@ def mainPage()
 
 def addBlindsPage()
 {
-    def deviceList = getHubDevice().getDeviceList()
+    def unasignedDevices = getDevicesAvailableToAdd()
+
     def nextOrDone = settings.blindToAdd && settings.blindName
     def paramValue = nextOrDone ? "confirmBlindAddedPage" : "mainPage"
 
     state.blindAdded = false    
 	def page = dynamicPage(name: "addBlindsPage",  title:"<b>Select a blind to add</b>\n", nextPage: paramValue)
     {
-        def unasignedDevices = [:]
 
-        deviceList.findAll{it.isBidirectional}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each{ unasigned ->
-        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: Bi-directional ${unasigned.shadeType}"
-
-        }
 
         def deviceCount = unasignedDevices.size()
 
@@ -137,7 +133,7 @@ def addBlindsPage()
 
 def confirmBlindAddedPage()
 {   
-	def page = dynamicPage(name: "confirmBlindAddedPage",  title:"<b>Blind added</b>\n", uninstall: false, install: false)
+	def page = dynamicPage(name: "confirmBlindAddedPage",  title:"<b>Blind added</b>\n", nextPage: "mainPage")
     {       
         section()
         {
@@ -157,11 +153,11 @@ def confirmBlindAddedPage()
             
             if(state.blindAdded)
             {
-                paragraph "Blind ${newBlindName} added successfully. Click 'Done' to return to previous page."
+                paragraph "Blind ${newBlindName} added successfully. Click 'Next' to return to previous page."
             }
             else
             {
-                paragraph "Something went wrong! Click 'Done' to return to previous page."
+                paragraph "Something went wrong! Click 'Next' to return to previous page."
             }
         }
 
@@ -174,27 +170,48 @@ def confirmBlindAddedPage()
 
 def removeBlindsPage()
 {
-    app.removeSetting("confirmDeleteTheBlinds")
-    def nextOrDone = !!settings.blindsToDelete
-    def paramValue = nextOrDone ? "removeBlindsAreYouSurePage" : "mainPage"
+    def activeBlinds = blindsWhichCanBeDeleted(true)
+    def inactiveBlinds = blindsWhichCanBeDeleted(false)
+
+    def anyBlindSelected = !!settings.activeBlindsToDelete || !!settings.inactiveBlindsToDelete
+    def paramValue = anyBlindSelected ? "removeBlindsAreYouSurePage" : "mainPage"
 
     
 	def page = dynamicPage(name: "removeBlindsPage",  title:"<b>Select blinds to delete</b>\n", nextPage: paramValue)
     {
-        def currentDevices = blindsWhichCanBeDeleted()
-        def deviceCount = currentDevices.size()
+        section("<b>Active Blinds</b>")
+        {
+            def count = activeBlinds.size()
+            input ("activeBlindsToDelete", "enum",
+                        required: false,
+                        multiple: true,
+                        title: "There ${count == 1? "is":"are"} ${count} active ${count == 1? 'blind':'blinds'} currently installed on Hubitat",
+                        description: "Use the dropdown to select blinds to delete.",
+                        submitOnChange: true,
+                        options: activeBlinds)
+        }
+
+        count = inactiveBlinds.size()
+        if(count > 0)
+        {
+            section("<b>Inactive Blinds</b>")
+            {
+                paragraph "You have inactive blinds installed in Hubitat. These are blinds with MACs which do not exist on the Connector Hub. This could be because the blind was" +
+                            " deleted from the Connector Hub or because its MAC has been edited. Commands sent from these blinds will be rejected by the Hub. You can either go to the" +
+                            " blind device and fix the MAC or delete the blind here."
+                input ("inactiveBlindsToDelete", "enum",
+                            required: false,
+                            multiple: true,
+                            title: "There ${count == 1? "is":"are"} ${count} inactive ${count == 1? 'blind':'blinds'} currently installed on Hubitat",
+                            description: "Use the dropdown to select blinds to delete.",
+                            submitOnChange: true,
+                            options: inactiveBlinds)
+            }
+        }
 
         section()
         {
-            input ("blindsToDelete", "enum",
-                        required: false,
-                        multiple: true,
-                        title: "There ${deviceCount == 1? "is":"are"} ${deviceCount} ${deviceCount == 1? 'blind':'blinds'} currently installed on Hubitat",
-                        description: "Use the dropdown to select blinds to delete.",
-                        submitOnChange: true,
-                        options: currentDevices)
-
-            if(nextOrDone)
+            if(anyBlindSelected)
             {
                 paragraph "Click 'Next' to confirm and delete blinds."
             }
@@ -203,8 +220,6 @@ def removeBlindsPage()
                 paragraph "Click 'Next' to return to main page."
             }
         }
-
-        logTrace("Blinds to remove: ${settings.blindsToDelete}")
     }
 
     return page
@@ -214,28 +229,17 @@ def removeBlindsPage()
 def removeBlindsAreYouSurePage()
 {
     state.blindsRemoved = false
-    def nextOrDone = !!settings.confirmDeleteTheBlinds
-    def paramValue = nextOrDone ? "confirmBlindsRemoved" : "removeBlindsPage"
-    def page = dynamicPage(name: "removeBlindsAreYouSurePage",  title:"<b>Confirm Delete</b>\n", nextPage: paramValue)
+
+    def page = dynamicPage(name: "removeBlindsAreYouSurePage",  title:"<b>Confirm Delete</b>\n", nextPage: "confirmBlindsRemoved")
     {
         section()
         {
-            def blindsToDeleteCount = settings.blindsToDelete?.size()
-            paragraph "Ready to remove ${blindsToDeleteCount} blind${blindsToDeleteCount > 1 ? 's':''}. Warning, if you continue then any automations using these blinds may no longer function correctly"
-            paragraph "Select the control below to confirm you wish to continue"
-            input "confirmDeleteTheBlinds", "bool", title:"Click to confirm", submitOnChange: true, defaultValue: false
+            def blindsToDeleteCount = (settings.activeBlindsToDelete?.size() ?: 0) + (settings.inactiveBlindsToDelete?.size() ?: 0)
+            paragraph "Ready to remove ${blindsToDeleteCount} blind${blindsToDeleteCount > 1 ? 's':''}. Warning, if you continue, any automations using these blinds may no longer function correctly."
 
-            if(nextOrDone)
-            {
-                paragraph "Click 'Next' to confirm and delete blinds."
-            }
-            else
-            {
-                paragraph "Click 'Next' to return to previous page."
-            }
+            paragraph "Click 'Next' to delete blinds."
+            paragraph "Click Back to return to previous page."
         }
-
-        logTrace("Blinds to remove: ${settings.blindsToDelete}")
     }
 
     return page
@@ -249,37 +253,52 @@ def confirmBlindsRemoved()
         section()
         {
             def removed = 0
-            if(settings.confirmDeleteTheBlinds && !state.blindsRemoved)
+            if(!state.blindsRemoved)
             {
-                settings.blindsToDelete.each{app.deleteChildDevice(it)}
-                removed = settings.blindsToDelete.size()
+                settings.activeBlindsToDelete?.each{app.deleteChildDevice(it)}
+                settings.inactiveBlindsToDelete?.each{app.deleteChildDevice(it)}
+                removed = (settings.activeBlindsToDelete?.size() ?: 0) + (settings.inactiveBlindsToDelete?.size() ?: 0)
                 state.blindsRemoved = true
 
-                app.updateSetting("confirmDeleteTheBlinds", false)
-                app.removeSetting("blindsToDelete")
+                app.removeSetting("activeBlindsToDelete")
+                app.removeSetting("inactiveBlindsToDelete")
             }
 
             paragraph "${removed} blind${removed > 1 ? 's':''} deleted."
             paragraph "Click 'Next' to return to main page."
         }
-
-        logTrace("Blinds to remove: ${settings.blindsToDelete}")
     }
 
     return page
     
 }
 
-def blindsWhichCanBeDeleted()
+private blindsWhichCanBeDeleted(active)
 {
-    def currentDevices = [:]
-    
-    app.getChildDevices().findAll{it.deviceNetworkId != getHubDeviceId() }.each{ blind ->
-        currentDevices[blind.deviceNetworkId] = "${blind.label}, Bi-directional (${blind.getMac()})"
+    def activeMacs = getHubDevice().getDeviceList().collect{ it.mac }
+    logTrace("Active Macs ${activeMacs}")
 
+    def allBlinds = app.getChildDevices().findAll{it.deviceNetworkId != getHubDeviceId() }
+
+    logTrace("All blinds ${allBlinds}")
+    def blinds = [:]
+
+    allBlinds.findAll{blind -> (!active) ^ activeMacs.any{mac -> mac == blind.getMac()}}.each
+    { blind ->
+        blinds[blind.deviceNetworkId] = blind.label
     }
 
-    return currentDevices
+    return blinds
+}
+
+def getDevicesAvailableToAdd()
+{
+    def deviceList = getHubDevice().getDeviceList()
+    def unasignedDevices = [:]
+    deviceList.findAll{it.isBidirectional}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each{ unasigned ->
+        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: Bi-directional ${unasigned.shadeType}"}
+
+    return unasignedDevices
 }
 
 def updateHubDevice()
