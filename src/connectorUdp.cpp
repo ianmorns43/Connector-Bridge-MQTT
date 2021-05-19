@@ -26,6 +26,7 @@ mqttMessage ConnectorUdp::loop()
         if(error)
         {
             Serial.printf("Error: %s\r\n", error.c_str());
+            return mqttMessage::emptyMessage();
         }
 
         auto messageType = std::string((const char *)doc["msgType"]);
@@ -74,7 +75,7 @@ mqttMessage ConnectorUdp::loop()
             return createDeviceMessage("moveComplete", doc);
         }
         else if(messageType == "ReadDeviceAck") //When asked for
-        {            
+        {           
             return createDeviceMessage("status", doc);
         }
 
@@ -93,8 +94,19 @@ mqttMessage ConnectorUdp::loop()
 
 mqttMessage ConnectorUdp::createDeviceMessage(const char* updateType, JsonDocument& doc)
 {
-    auto deviceMac = std::string((const char *)doc["mac"]);
     auto data = doc["data"];
+    if(data == nullptr)
+    {
+        //If you attempt to interact with a motor which does not exist you get this back
+        //{"msgType":"ReadDeviceAck","actionResult":"device not exist"}
+        //Hmmm, this is not really helpful. It doesn't contian the mac of the device which doesn't exist.
+        //Tryig to remember which was the last mac enquired about could get messy
+        //The only thing I can really do is do nothing
+        Serial.printf("Skipping message");
+        return mqttMessage::emptyMessage();
+    }
+     
+    auto deviceMac = std::string((const char *)doc["mac"]);
     auto bidirectional = data["wirelessMode"] == 1;
 
     if(!bidirectional)
