@@ -28,6 +28,7 @@ definition(
 preferences
 {  
     page(name: "mainPage")
+    page(name: "connectorHubSetup")
     page(name: "addBlindsPage")
     page(name: "confirmBlindAddedPage")
     page(name: "removeBlindsPage")
@@ -48,9 +49,7 @@ def mainPage()
 
         section(title)
         {
-            input "hubName", "text", title: "Hub Name", multiple: false, submitOnChange: true, required: true
-            input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, submitOnChange: true, required: true, defaultValue: "DD7002B"
-            input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
+            href "connectorHubSetup", title: "Connector Hub Setup", description: "Connect to a Dooya Connector Hub, Bloc.IQ, or DreamHub."
         }
         section("<b>Mqtt Broker</b>")
         {
@@ -89,6 +88,26 @@ def mainPage()
         section("Logging")
         {
             input "enableLogging", "bool", title: "Enable debug logging for 30 minutes", multiple: false, defaultValue: false
+        }
+    }
+    
+    return page;
+}
+
+def connectorHubSetup()
+{
+    def hubDevice = getHubDevice()    
+	def page = dynamicPage(name: "connectorHubSetup",  title:"<b>Connector Hub Setup</b>\n", nextPage: "mainPage")
+    {
+        def hubIp = location?.hubs[0]?.localIP
+        def title = (hubIp && hubDevice) ? "<b><a href='http://${hubIp}/device/edit/${hubDevice.id}' target='_blank'>Connector Hub</a><b>" :
+                    "<b>Connector Hub</b>"
+
+        section(title)
+        {
+            input "hubName", "text", title: "Hub Name", multiple: false, submitOnChange: true, required: true
+            input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, submitOnChange: true, required: true, defaultValue: "DD7002B"
+            input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
         }
     }
     
