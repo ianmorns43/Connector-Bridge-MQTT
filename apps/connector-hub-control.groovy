@@ -43,16 +43,10 @@ def mainPage()
     
 	def page = dynamicPage(name: "mainPage",  title:"<b>Setup</b>\n", uninstall: true, install: true)
     {
-        def hubIp = location?.hubs[0]?.localIP
-        def title = (hubIp && hubDevice) ? "<b><a href='http://${hubIp}/device/edit/${hubDevice.id}' target='_blank'>Connector Hub</a><b>" :
-                    "<b>Connector Hub</b>"
-
-        section(title)
+        section()
         {
             href "connectorHubSetup", title: "Connector Hub Setup", description: "Connect to a Dooya Connector Hub, Bloc.IQ, or DreamHub."
-        }
-        section("<b>Mqtt Broker</b>")
-        {
+
             input "mqttBroker", "capability.healthCheck", title: "MQTT Broker Device", multiple: false, required: true, submitOnChange: true
             if(!settings.brokerValidationResult)
             {
