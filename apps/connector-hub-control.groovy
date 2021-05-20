@@ -16,7 +16,7 @@
 
 definition(
     name: "Connector Hub Control",
-    namespace: "ianmorns_rfremote",    
+    namespace: "ianmorns_connector",    
     singleInstance: true,
     author: "Ian Morns",
     description: "Proxy to Dooya Connector Hub",
@@ -156,7 +156,7 @@ def confirmBlindAddedPage()
             if(!state.blindAdded && settings.blindToAdd && settings.blindName)
             {
                 logTrace ("Adding ${settings.blindName}")
-                def child = addChildDevice("ianmorns_rfremote", "Dooya Bidirectional Blind", UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
+                def child = addChildDevice("ianmorns_connector", "Dooya Bidirectional Blind", UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
                 child.setMac(settings.blindToAdd)
 
                 app.updateSetting("addTheBlind", false)
@@ -320,7 +320,7 @@ def updateHubDevice()
     def hubDevice = getHubDevice()
     if(!hubDevice && settings.brokerValidationResult && settings.hubTopic && settings.hubName)
     {
-        hubDevice = app.addChildDevice("ianmorns_rfremote", "Connector Hub", getHubDeviceId(), [label: settings.hubName, isComponent: true])
+        hubDevice = app.addChildDevice("ianmorns_connector", "Connector Hub", getHubDeviceId(), [label: settings.hubName, isComponent: true])
         hubDevice.configure()
     }
 

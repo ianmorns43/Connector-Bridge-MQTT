@@ -18,7 +18,7 @@
  *
  */
 metadata {
-	definition (name: "Connector Hub", namespace: "ianmorns_rfremote", author: "Ian Morns") {
+	definition (name: "Connector Hub", namespace: "ianmorns_connector", author: "Ian Morns") {
         capability "Configuration"
         capability "Refresh"
         capability "Actuator"

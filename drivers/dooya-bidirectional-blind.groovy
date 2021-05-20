@@ -17,7 +17,7 @@
  *
  */
 metadata {
-	definition (name: "Dooya Bidirectional Blind", namespace: "ianmorns_rfremote", author: "Ian Morns") {
+	definition (name: "Dooya Bidirectional Blind", namespace: "ianmorns_connector", author: "Ian Morns") {
 		capability "WindowShade"
         capability "Configuration"
         capability "Refresh"
