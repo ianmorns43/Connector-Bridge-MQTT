@@ -167,7 +167,7 @@ dooya_connector_hub/command                     {command:"updateDeviceList"}
 
 def publishWithRetry(Map action, Map expected)
 {
-    def retryInterval = 60
+    def retryInterval = 120
     def data =[data: [action:action, nexAction:"refresh", lastRetryInterval:retryInterval, expected:expected]]
     publish(action)
     runIn(retryInterval, movementTimeout, data)
