@@ -108,30 +108,9 @@ def connectorHubSetup()
     return page;
 }
 
-def blindsTable(blinds)
-{
-    def hubIp = location?.hubs[0]?.localIP
-    def table = "<table><tr><th>Name</th><th>Position</th></tr>"
-
-    blinds.each
-    {
-        dni,label->
-        logTrace("Blind: ${dni}, ${name}")
-        def device = app.getChildDevice(dni)
-        def name = hubIp ? "<a href='http://${hubIp}/device/edit/${device.id}' target='_blank'>${device.label}</a>" : device.label
-        table += "<tr><td>${name}</td><td>${device.currentValue('position')}</td></tr>"
-    }
-
-    table += "</table>"
-
-    logTrace("table: ${table}")
-
-    return table
-}
-
 def viewBlindsPage()
 {
-	def page = dynamicPage(name: "viewBlindsPage",  title:"<b>Connected Blinds</b>\n", nextPage: "mainPage")
+	def page = dynamicPage(name: "viewBlindsPage",  title:"", nextPage: "mainPage")
     {
         section("<b>Active Blinds")
         {
@@ -400,6 +379,59 @@ def validateBroker()
         app?.removeSetting("brokerValidationResult")
         return !settings.mqttBroker ? "No Broker device is selected." : "The selected device is of the wrong type."
     }
+}
+
+def blindsTable(blinds)
+{
+    def hubIp = location?.hubs[0]?.localIP
+    def table = "<div id='list-view'>"+
+                "<table class='mdl-data-table mdl-js-data-table mdl-shadow--2dp' id='device-table' style='width:100%'>"+
+                    "<thead>"+
+                    "<tr>"+
+                        "<th class='mdl-data-table__cell--non-numeric sort nameTD' data-sort='name'>Label (Name)</th>"+
+                        "<th class='mdl-data-table__cell--numeric sort positionTD' data-sort='position'>Position</th>"+
+                    "</tr>"+
+                    "</thead>"+
+                    "<tbody class='list'>"
+    blinds.each
+    {
+        dni,label->
+        logTrace('Blind: ${dni}, ${name}')
+        def device = app.getChildDevice(dni)
+        def position = device.currentValue("position")
+        table += "<tr data-device-id='${device.id}' data-parent-room-id='' class='device-row searchable-device-row'>"
+
+
+        table += "<td data-order='${device.label}' class='mdl-data-table__cell--non-numeric nameTD'>"+
+            "<div class='deviceLink'>"+
+                "<a data-id='${device.id}' href='/device/edit/${device.id}' class='searchable-device-name'>"+
+                    "<div>${device.label}</div>"+
+                    "<div style='padding-left:5px;font-size:12px;color:#666'>"+
+                        "${device.name}"+
+                    "</div>"+
+                "</a>"+
+            "</div>"+
+        "</td>"
+
+        table += "<td data-order='${position}' class='mdl-data-table__cell--numeric positionTD'>"+
+            "<div>"+
+                "${position}"+
+            "</div>"+
+        "</div>"+
+        "</td>"
+
+        table += "</tr>"
+        
+
+        //def name = hubIp ? "<a href='http://${hubIp}/device/edit/${device.id}' target='_blank'>${device.label}</a>" : device.label
+        //table += "<tr><td>${name}</td><td>${device.currentValue('position')}</td></tr>"
+    }
+
+    table += '</tbody></table></div>'
+
+    logTrace("table: ${table}")
+
+    return table
 }
 
 def installed() 
