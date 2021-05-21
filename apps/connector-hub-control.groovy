@@ -29,6 +29,7 @@ preferences
 {  
     page(name: "mainPage")
     page(name: "connectorHubSetup")
+    page(name: "viewBlindsPage")
     page(name: "addBlindsPage")
     page(name: "confirmBlindAddedPage")
     page(name: "removeBlindsPage")
@@ -62,20 +63,19 @@ def mainPage()
             def unasignedDevices = getDevicesAvailableToAdd()
             def activeBlinds = blindsWhichCanBeDeleted(true)
             def inactiveBlinds = blindsWhichCanBeDeleted(false)
-            section("<b>Summary</b>")
-            {
-                def p = pluralize(unasignedDevices.size())
-                paragraph  "There ${p.isAre} ${p.count} blind${p.s} available on the Connector Hub which can be installed on Hubitat."
-                p = pluralize(activeBlinds.size())
-                paragraph  "There ${p.isAre} ${p.count} active blind${p.s} currently installed on Hubitat."
-                p = pluralize(inactiveBlinds.size())
-                paragraph  "There ${p.isAre} ${p.count} inactive blind${p.s} currently installed on Hubitat."
 
-            }
-            section("<b>Add/Remove blinds</b>")
+            section("<b>Manage blinds</b>")
             {
-                href "addBlindsPage", title: "<b>Add Blinds</b>", description: "Select blinds to install on Hubitat."
-                href "removeBlindsPage", title: "<b>Remove Blinds</b>", description: "Select blinds to uninstall from Hubitat."
+                def pA = pluralize(activeBlinds.size())
+                def pI = pluralize(inactiveBlinds.size())
+                def pU = pluralize(unasignedDevices.size())
+                def viewDeleteDescription = pI.count ?
+                    "There ${pA.isAre} ${pA.count} active and ${pI.count} inactive blind${pI.s} currently installed on Hubitat." :
+                    "There ${pA.isAre} ${pA.count} blind${pA.s} currently installed on Hubitat."
+                
+                href "viewBlindsPage", title: "<b>View and Edit</b>", description: viewDeleteDescription
+                href "addBlindsPage", title: "<b>Add Blinds</b>", description: "There ${pU.isAre} ${pU.count} blind${pU.s} available to be installed on Hubitat."
+                href "removeBlindsPage", title: "<b>Remove Blinds</b>", description: viewDeleteDescription
             }
         }       
 
@@ -102,6 +102,49 @@ def connectorHubSetup()
             input "hubName", "text", title: "Hub Name", multiple: false, submitOnChange: true, required: true
             input "hubTopic", "text", title: "Hub MQTT Topic", multiple: false, submitOnChange: true, required: true, defaultValue: "DD7002B"
             input "hubKey", "password", title: "Hub Key", multiple: false, required: true, description: "to get your key, open 'Connector' app on your mobile device. Go to 'About' and tap the connector icon 5 times."
+        }
+    }
+    
+    return page;
+}
+
+def blindsTable(blinds)
+{
+    def hubIp = location?.hubs[0]?.localIP
+    def table = "<table><tr><th>Name</th><th>Position</th></tr>"
+
+    blinds.each
+    {
+        dni,label->
+        logTrace("Blind: ${dni}, ${name}")
+        def device = app.getChildDevice(dni)
+        def name = hubIp ? "<a href='http://${hubIp}/device/edit/${device.id}' target='_blank'>${device.label}</a>" : device.label
+        table += "<tr><td>${name}</td><td>${device.currentValue('position')}</td></tr>"
+    }
+
+    table += "</table>"
+
+    logTrace("table: ${table}")
+
+    return table
+}
+
+def viewBlindsPage()
+{
+	def page = dynamicPage(name: "viewBlindsPage",  title:"<b>Connected Blinds</b>\n", nextPage: "mainPage")
+    {
+        section("<b>Active Blinds")
+        {
+            paragraph blindsTable(blindsWhichCanBeDeleted(true))
+        }
+
+        def inactiveBlinds = blindsWhichCanBeDeleted(false)
+        if(inactiveBlinds.size() > 0)
+        {        
+            section("<b>Inactive Blinds")
+            {
+                paragraph blindsTable(inactiveBlinds)
+            }   
         }
     }
     
