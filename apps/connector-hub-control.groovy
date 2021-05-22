@@ -477,12 +477,11 @@ def initialize()
 public updateConnections(evt)
 {
     logTrace("updateConnections: " + evt)
-    app?.getChildApps().each{ it.updateConnections() }
+    app?.getChildDevices().each{ it.configure() }
 }
 
 public brokerStatusChanged(evt)
 {
-    app.getChildApps().each{ it.brokerStatusChanged(evt) }
     app.getChildDevices().each{ it.brokerStatusChanged(evt) }
 }
 
