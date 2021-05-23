@@ -61,7 +61,7 @@ def parse(String description)
 
     if(attributes.containsKey("battery"))
     {
-        sendEvent(name: "battery", value: attributes.battery)
+        sendEvent(name: "battery", value: attributes.battery / 100, unit: "V")
     }
 
     if(attributes.containsKey("rssi"))
