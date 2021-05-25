@@ -68,15 +68,15 @@ mqttMessage ConnectorUdp::loop()
         }
         else if(messageType == "WriteDeviceAck")
         {
-            return createDeviceMessage("commandReceived", doc);            
+            return createDeviceMessage("cmCr", doc);            
         }
         else if(messageType == "Report") //When motor stops
         {
-            return createDeviceMessage("moveComplete", doc);
+            return createDeviceMessage("cmMc", doc);
         }
         else if(messageType == "ReadDeviceAck") //When asked for
         {           
-            return createDeviceMessage("status", doc);
+            return createDeviceMessage("cmSt", doc);
         }
 
         Serial.printf("Unrecognised udp: %s\r\n", packet.c_str());

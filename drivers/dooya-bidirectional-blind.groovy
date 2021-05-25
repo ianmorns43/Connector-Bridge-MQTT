@@ -19,7 +19,6 @@
 metadata {
 	definition (name: "Dooya Bidirectional Blind", namespace: "ianmorns_connector", author: "Ian Morns") {
 		capability "WindowShade"
-        capability "Configuration"
         capability "Refresh"
         capability "Battery"
         capability "SignalStrength"
@@ -39,19 +38,21 @@ metadata {
 // parse events into attributes
 def parse(String description)
 {
-    //TODO set hubStatus based in lwt
-    def message = interfaces.mqtt.parseMessage(description)
-    logTrace(message)
+}
 
-    def topic = message.topic
-    if(topic.endsWith("/lwt"))
+def parse(Map message)
+{
+    //parent.forwardMessage([deviceMac:deviceMac, messageType:messageType, payload:payload])
+    //TODO set hubStatus based in lwt
+
+    logTrace("At device: ${message}")
+    if(message.messageType == "lwt")
     {
         sendEvent(name: "hubStatus", value: message.payload)
         return
     }
 
-    def slurper = new JsonSlurper()
-    def attributes = slurper.parseText(message.payload)
+    def attributes = message.payload
     logTrace(attributes)
 
     if(attributes.containsKey("shadeType"))
@@ -74,18 +75,18 @@ def parse(String description)
         sendEvent(name:"position", value: attributes.position)
     }
 
-    if(topic.endsWith("status"))
+    if(message.messageType == "cmSt")
     {
         unschedule(refreshTimeout)
         setShadeBasedOnPosition(attributes.position)
     }
 
-    if(topic.endsWith("commandReceived"))
+    if(message.messageType == "cmCr")
     {
         sendEvent(name: "windowShade", value: state.lastMovementDirection);
     }
 
-    if(topic.endsWith("moveComplete"))
+    if(message.messageType == "cmMc")
     {
         unschedule(movementTimeout)
         setShadeBasedOnPosition(attributes.position)
@@ -239,8 +240,6 @@ def publish(Map action)
     Boolean includeKey = action.includeKey
     Map parameters = action.parameters
 
-    reconectIfNessecary()
-
     def details = parent.getHubDetails()
     def payload = [command:command, mac:getMac()]
 
@@ -254,13 +253,7 @@ def publish(Map action)
         payload << parameters
     }
 
-    def topic = "${details.hubTopic}/command"
-    //logTrace("Publish: ${topic}, ${payload}")
-    def payloadJson = JsonOutput.toJson(payload)
-
-    
-    logTrace("Publish: ${topic}, ${payloadJson}")
-    interfaces.mqtt.publish(topic, payloadJson)    
+    parent.publish(payload)    
 }
 
 def installed()
@@ -271,10 +264,6 @@ def installed()
 def uninstalled()
 {
     logTrace("Uninstalling")
-    if(interfaces.mqtt.isConnected())
-    {
-        interfaces.mqtt.disconnect()
-    }
 }
 
 def updated()
@@ -290,10 +279,6 @@ def initialize()
         runIn(1800, "disableLogging");
     }
 
-    if(settings.mac && settings.mac != device.data.lastSubscribedMac)
-    {
-        configure()
-    }
     startPing()
 }
 
@@ -307,25 +292,9 @@ def startPing()
     schedule("${second} ${minute}/${refreshInterval} * ? * * *", "refreshWithoutRetry");
 }
 
-def subscritionTopics(mac)
-{
-    def details = parent.getHubDetails()
-    def hubTopic = details.hubTopic
-
-    topics = []
-    topics << "${details.hubTopic}/${mac}/+"
-    topics << "${details.hubTopic}/lwt"
-    return topics
-}
-
-
 public setMac(mac)
 {
     device.updateSetting("mac", mac)
-    if(mac != device.data.lastSubscribedMac)
-    {
-        configure()
-    }
 }
 
 public getMac()
@@ -333,69 +302,10 @@ public getMac()
     return settings.mac
 }
 
-public configure()
-{
-    logTrace("Broker details updated")
-    if(interfaces.mqtt.isConnected())
-    {
-        interfaces.mqtt.disconnect()
-    }
-    refresh()
-}
-
 public brokerStatusChanged(evt)
 {
     if(evt.value == "offline")
     {
-        sendEvent(name: "hubStatus", value: "unknown")
-    }
-    else
-    {
-        reconectIfNessecary()
-    }
-}
-
-def reconectIfNessecary()
-{
-    if(!interfaces.mqtt.isConnected())
-    {
-        logTrace("attempting to reconnect")
-        connectAndSubscribe()
-    }
-}
-
-def connectAndSubscribe()
-{
-    def connectionDetails = parent.getHubDetails()
-    def mac = getMac()
-    if(!interfaces.mqtt.isConnected() && mac)
-    {
-        try
-        {
-            interfaces.mqtt.connect(connectionDetails.path, device.deviceNetworkId, connectionDetails.username, connectionDetails.password)
-            subscritionTopics(mac).each
-            { 
-                topic -> interfaces.mqtt.subscribe(topic)
-                logTrace("Subscribed to: ${topic}")
-            }
-
-            device.updateDataValue("lastSubscribedMac", mac)
-        }
-        catch(exception)
-        {
-            logTrace("Connection error: " + exception)
-            sendEvent(name: "hubStatus", value: "unknown")
-        }
-    }    
-}
-
-def mqttClientStatus(String message)
-{
-    logTrace("mqttClientStatus $message")
-    
-    if(message.indexOf("Connection lost") >= 0 || message.indexOf("Client is not connected") >= 0)
-    {
-        logTrace("Lost connection so hubStatus is nolonger known")
         sendEvent(name: "hubStatus", value: "unknown")
     }
 }

@@ -38,6 +38,16 @@ metadata {
     }
 }
 
+/*
+dooya_connector_hub/lwt                         <"online"|"offline">
+dooya_connector_hub/hub/heartbeat               {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
+dooya_connector_hub/hub/deviceList              {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
+
+dooya_connector_hub/<deviceMac>/status           
+dooya_connector_hub/<deviceMac>/commandReceived           
+dooya_connector_hub/<deviceMac>/moveComplete 
+*/
+
 def parse(String description)
 {
     def message = interfaces.mqtt.parseMessage(description)
@@ -61,6 +71,7 @@ def parse(String description)
         {
             refresh()
         }
+        return
     }
 
     if(topic.endsWith("/deviceList"))
@@ -78,15 +89,23 @@ def parse(String description)
         }
        
         refreshDevicesWithRetry()
+        return
     }
 
-    if(topic.endsWith("/status"))
+    def parts = topic.split('/')
+    logTrace("${parts?.size()} parts: ${parts}")
+    if(parts?.size() != 3)
+    {
+        return
+    }
+
+    def deviceMac = parts[1]
+    def messageType = parts[2]
+
+    if(messageType == "cmSt")
     {
         try
-        {
-            def withUpdate = topic.find("[a-f|0-9]*/status")
-            def deviceMac = withUpdate.find("^[a-f|0-9]*")
-            
+        {            
             logTrace("deviceMac ${deviceMac}")
 
             state.deviceList.findAll{it.mac == deviceMac}.each
@@ -107,6 +126,8 @@ def parse(String description)
 
         updateDeviceCounts()
     }
+
+    parent.forwardMessage([deviceMac:deviceMac, messageType:messageType, payload:payload])
 }
 
 public getMac()
@@ -175,7 +196,7 @@ def refreshWithRetry(data)
     runIn(retryInterval, refreshWithRetry, [data: data])
 }
 
-def publish(Map payload)
+public publish(Map payload)
 {
     reconectIfNessecary()
 
@@ -230,9 +251,7 @@ def subscritionTopics()
     def hubTopic = details.hubTopic
 
     topics = []
-    topics << "${details.hubTopic}/hub/+"
-    topics << "${details.hubTopic}/+/status"
-    topics << "${details.hubTopic}/lwt"
+    topics << "${details.hubTopic}/#"
     return topics
 }
 

@@ -485,6 +485,18 @@ public brokerStatusChanged(evt)
     app.getChildDevices().each{ it.brokerStatusChanged(evt) }
 }
 
+public publish(Map payload)
+{
+    getHubDevice()?.publish(payload)
+}
+
+public forwardMessage(Map message)
+{
+    def mac = message.deviceMac
+    def target = app?.getChildDevices().find{ it.getMac() == mac}
+    target?.parse(message)
+}
+
 public getHubDetails()
 {
     def details = [:]
