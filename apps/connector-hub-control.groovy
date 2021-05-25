@@ -477,7 +477,7 @@ def initialize()
 public updateConnections(evt)
 {
     logTrace("updateConnections: " + evt)
-    app?.getChildDevices().each{ it.configure() }
+    getHubDevice()?.configure()
 }
 
 public brokerStatusChanged(evt)
