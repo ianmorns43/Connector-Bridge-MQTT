@@ -38,23 +38,23 @@ metadata {
     }
 }
 
-/*
-dooya_connector_hub/lwt                         <"online"|"offline">
-dooya_connector_hub/hub/heartbeat               {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
-dooya_connector_hub/hub/deviceList              {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
-
-dooya_connector_hub/<deviceMac>/status           
-dooya_connector_hub/<deviceMac>/commandReceived           
-dooya_connector_hub/<deviceMac>/moveComplete 
-*/
-
 def parse(String description)
 {
     def message = interfaces.mqtt.parseMessage(description)
     logTrace(message)
 
-    def topic = message.topic
-    if(topic.endsWith("/lwt"))
+    def parts = message.topic.split('/')
+    logTrace("${parts?.size()} parts: ${parts}")
+    if(parts?.size() != 3)
+    {
+        return
+    }
+
+    //def root = parts[0]
+    //def deviceType = parts[1] <hub|blind>
+    def messageType = parts[2]
+
+    if(messageType == "lwt")
     {
         sendEvent(name: "hubStatus", value: message.payload)
         return
@@ -64,7 +64,7 @@ def parse(String description)
     def payload = slurper.parseText(message.payload)
     logTrace(payload)
 
-    if(topic.endsWith("/heartbeat"))
+    if(messageType == "heartbeat")
     {
         sendEvent(name:"rssi", value:payload.rssi)
         if(payload.deviceCount != device.currentValue("deviceCount"))
@@ -74,7 +74,7 @@ def parse(String description)
         return
     }
 
-    if(topic.endsWith("/deviceList"))
+    if(messageType == "deviceList")
     {
         unschedule(refreshWithRetry)
         device.updateDataValue("mac", payload.mac)
@@ -92,20 +92,11 @@ def parse(String description)
         return
     }
 
-    def parts = topic.split('/')
-    logTrace("${parts?.size()} parts: ${parts}")
-    if(parts?.size() != 3)
-    {
-        return
-    }
-
-    def deviceMac = parts[1]
-    def messageType = parts[2]
-
-    if(messageType == "cmSt")
+    if(messageType == "status")
     {
         try
         {            
+            def deviceMac = payload.mac
             logTrace("deviceMac ${deviceMac}")
 
             state.deviceList.findAll{it.mac == deviceMac}.each
@@ -127,7 +118,7 @@ def parse(String description)
         updateDeviceCounts()
     }
 
-    parent.forwardMessage([deviceMac:deviceMac, messageType:messageType, payload:payload])
+    parent.forwardMessage([messageType:messageType, payload:payload])
 }
 
 public getMac()
@@ -251,7 +242,8 @@ def subscritionTopics()
     def hubTopic = details.hubTopic
 
     topics = []
-    topics << "${details.hubTopic}/#"
+    topics << "${details.hubTopic}/hub/+"
+    topics << "${details.hubTopic}/blind/+"
     return topics
 }
 

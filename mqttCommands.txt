@@ -1,27 +1,28 @@
 Topics
 publishes:
-dooya_connector_hub/lwt                         <"online"|"offline">
-dooya_connector_hub/hub/heartbeat               {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
-dooya_connector_hub/hub/deviceList              {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
+DD7002B/hub/lwt                         <"online"|"offline">
+DD7002B/hub/heartbeat                   {deviceCount:<deviceCount>, mac:"<hubMac>", rssi:<hub rssi>}
+DD7002B/hub/deviceList                  {mac:"<hubMac>", deviceMacs:[<device1Mac>, ..., <deviceNMac>]}
 
-dooya_connector_hub/<deviceMac>/status           
-dooya_connector_hub/<deviceMac>/commandReceived           
-dooya_connector_hub/<deviceMac>/moveComplete    {bidirectional:<is biderectional (bool)>,
-                                                 position²:<position (%)>, 
-                                                 shadeType²:"<Roller Blinds|Roman Blinds etc...>", 
-                                                 battery²:<battery voltage (V)>, 
-                                                 rssi²:<rssi>}
+DD7002B/blind/status           
+DD7002B/blind/moving           
+DD7002B/blind/moved                   { mac:deviceMac,
+                                        bidirectional:<is biderectional (bool)>,
+                                        position²:<position (%)>, 
+                                        shadeType²:"<Roller Blinds|Roman Blinds etc...>", 
+                                        battery²:<battery voltage (V)>, 
+                                        rssi²:<rssi>}
 
 
 ² for bi-directional blinds only
 
 Subscribes to:
-dooya_connector_hub/command                     {command:"updateDeviceList"}
-                                                {command:"moveShade", mac:"<deviceMac>", key:"<hub-secret-key>", position:<newPosition>}
-                                                {command:"openShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
-                                                {command:"closeShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
-                                                {command:"stopShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
-                                                {command:"getStatus", mac:"<deviceMac>"}
+DD7002B/command                         {command:"updateDeviceList"}
+                                        {command:"moveShade", mac:"<deviceMac>", key:"<hub-secret-key>", position:<newPosition>}
+                                        {command:"openShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                        {command:"closeShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                        {command:"stopShade", mac:"<deviceMac>", key:"<hub-secret-key>"}
+                                        {command:"getStatus", mac:"<deviceMac>"}
 
 commands:
 heartbeat

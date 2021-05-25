@@ -12,7 +12,7 @@ udpMessageQueue* ConnectorMqttClient::messageQueue = nullptr;
 void ConnectorMqttClient::mqttConnect()
 {
     std::ostringstream lwtTopic;
-    lwtTopic << MQTT_TOPIC << "/lwt";
+    lwtTopic << MQTT_TOPIC << "/hub/lwt";
     // Loop until we're reconnected
     while (!mqttClient.connected())
     {

@@ -70,7 +70,8 @@ mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac,
 {
     std::ostringstream payloadStream;
     payloadStream << "{";
-    payloadStream << "\"bidirectional\":true";
+    payloadStream << "\"mac\":\"" << deviceMac << "\"";
+    payloadStream << ",\"bidirectional\":true";
     payloadStream << ",\"position\":" << 100 - position;
     payloadStream << ",\"shadeType\":\"" << shadeType << "\"";
     payloadStream << ",\"battery\":" << batteryLevel;
@@ -78,7 +79,7 @@ mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac,
     payloadStream << "}";
 
     std::ostringstream topicStream;
-    topicStream << deviceMac << "/" << updateType;
+    topicStream << "blind/" << updateType;
 
     std::string devicePayload = payloadStream.str();
     return mqttMessage(topicStream.str().c_str(), devicePayload);
@@ -86,9 +87,15 @@ mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac,
 
 mqttMessage mqttMessage::createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType)
 {
-    std::ostringstream topicStream;
-    topicStream << deviceMac << "/" << updateType;
+    std::ostringstream payloadStream;
+    payloadStream << "{";
+    payloadStream << "\"mac\":\"" << deviceMac << "\"";
+    payloadStream << ",\"bidirectional\":false";
+    payloadStream << "}";
 
-    std::string devicePayload("{\"bidirectional\":false}");
+    std::ostringstream topicStream;
+    topicStream << "blind/" << updateType;
+
+    std::string devicePayload = payloadStream.str();
     return mqttMessage(topicStream.str().c_str(), devicePayload);
 }

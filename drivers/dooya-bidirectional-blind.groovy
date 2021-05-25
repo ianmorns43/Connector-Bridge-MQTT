@@ -75,18 +75,18 @@ def parse(Map message)
         sendEvent(name:"position", value: attributes.position)
     }
 
-    if(message.messageType == "cmSt")
+    if(message.messageType == "status")
     {
         unschedule(refreshTimeout)
         setShadeBasedOnPosition(attributes.position)
     }
 
-    if(message.messageType == "cmCr")
+    if(message.messageType == "moving")
     {
         sendEvent(name: "windowShade", value: state.lastMovementDirection);
     }
 
-    if(message.messageType == "cmMc")
+    if(message.messageType == "moved")
     {
         unschedule(movementTimeout)
         setShadeBasedOnPosition(attributes.position)

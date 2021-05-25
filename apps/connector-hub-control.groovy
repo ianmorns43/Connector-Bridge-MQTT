@@ -492,7 +492,7 @@ public publish(Map payload)
 
 public forwardMessage(Map message)
 {
-    def mac = message.deviceMac
+    def mac = message.payload.mac
     def target = app?.getChildDevices().find{ it.getMac() == mac}
     target?.parse(message)
 }
