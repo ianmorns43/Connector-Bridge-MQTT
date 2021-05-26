@@ -52,6 +52,8 @@ def parse(Map message)
         return
     }
 
+    sendEvent(name: "hubStatus", value: "online")
+
     def attributes = message.payload
     logTrace(attributes)
 
@@ -258,7 +260,8 @@ def publish(Map action)
 
 def installed()
 {
-    initialize();
+    initialize()
+    refresh()
 }
 
 def uninstalled()
@@ -300,14 +303,6 @@ public setMac(mac)
 public getMac()
 {
     return settings.mac
-}
-
-public brokerStatusChanged(evt)
-{
-    if(evt.value == "offline")
-    {
-        sendEvent(name: "hubStatus", value: "unknown")
-    }
 }
 
 private disableLogging()

@@ -326,7 +326,7 @@ private blindsWhichCanBeDeleted(active)
     def activeMacs = getHubDevice().getDeviceList().collect{ it.mac }
     logTrace("Active Macs ${activeMacs}")
 
-    def allBlinds = app.getChildDevices().findAll{it.deviceNetworkId != getHubDeviceId() }
+    def allBlinds = getAllBlinds()
 
     logTrace("All blinds ${allBlinds}")
     def blinds = [:]
@@ -337,6 +337,11 @@ private blindsWhichCanBeDeleted(active)
     }
 
     return blinds
+}
+
+private getAllBlinds()
+{
+    return app.getChildDevices().findAll{it.deviceNetworkId != getHubDeviceId() }
 }
 
 def getDevicesAvailableToAdd()
@@ -466,11 +471,21 @@ def initialize()
     subscribe(settings.mqttBroker, "brokerDetails", updateConnections)
     subscribe(settings.mqttBroker, "brokerStatus", brokerStatusChanged)
 
+    if(getHubDevice())
+    {
+        subscribe(getHubDevice(), "hubStatus", hubStatusChanged)
+    }
+
     if(settings.hubTopic != app.state.previoushubTopic)
     {
         app.state.previoushubTopic = settings.hubTopic;
         updateConnections(null)
     }
+}
+
+public hubStatusChanged(evt)
+{
+    getAllBlinds().each{ it.sendEvent(name: "hubStatus", value: evt.value)}
 }
 
 public updateConnections(evt)
@@ -481,7 +496,7 @@ public updateConnections(evt)
 
 public brokerStatusChanged(evt)
 {
-    app.getChildDevices().each{ it.brokerStatusChanged(evt) }
+    getHubDevice()?.each{ it.brokerStatusChanged(evt) }
 }
 
 public publish(Map payload)
