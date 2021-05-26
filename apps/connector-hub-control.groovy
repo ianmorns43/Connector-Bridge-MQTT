@@ -93,8 +93,7 @@ def connectorHubSetup()
     def hubDevice = getHubDevice()    
 	def page = dynamicPage(name: "connectorHubSetup",  title:"<b>Connector Hub Setup</b>\n", nextPage: "mainPage")
     {
-        def hubIp = location?.hubs[0]?.localIP
-        def title = (hubIp && hubDevice) ? "<b><a href='http://${hubIp}/device/edit/${hubDevice.id}' target='_blank'>Connector Hub</a><b>" :
+        def title = hubDevice ? "<b><a href='/device/edit/${hubDevice.id}' target='_blank'>Connector Hub</a><b>" :
                     "<b>Connector Hub</b>"
 
         section(title)
@@ -404,7 +403,7 @@ def blindsTable(blinds)
 
         table += "<td data-order='${device.label}' class='mdl-data-table__cell--non-numeric nameTD'>"+
             "<div class='deviceLink'>"+
-                "<a data-id='${device.id}' href='/device/edit/${device.id}' class='searchable-device-name'>"+
+                "<a data-id='${device.id}' href='/device/edit/${device.id}' class='searchable-device-name' target='_blank'>"+
                     "<div>${device.label}</div>"+
                     "<div style='padding-left:5px;font-size:12px;color:#666'>"+
                         "${device.name}"+
