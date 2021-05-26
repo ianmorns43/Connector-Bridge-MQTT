@@ -485,18 +485,17 @@ def initialize()
 
 public hubStatusChanged(evt)
 {
-    getAllBlinds().each{ it.sendEvent(name: "hubStatus", value: evt.value)}
+    getAllBlinds()?.each{ it.sendEvent(name: "hubStatus", value: evt.value)}
 }
 
 public updateConnections(evt)
 {
-    logTrace("updateConnections: " + evt)
     getHubDevice()?.configure()
 }
 
 public brokerStatusChanged(evt)
 {
-    getHubDevice()?.each{ it.brokerStatusChanged(evt) }
+    getHubDevice()?.brokerStatusChanged(evt)
 }
 
 public publish(Map payload)
