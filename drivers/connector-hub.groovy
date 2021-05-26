@@ -151,7 +151,7 @@ def refreshDevicesWithRetry()
         return
     }
 
-    state.deviceList.findAll{it.isBidirectional == null}?.each{publish([command:"getStatus", mac:it.mac])}  
+    state.deviceList.findAll{it.isBidirectional == null}?.each{publishCommand([command:"getStatus", mac:it.mac])}  
 
     def retryDelay = (Integer)(20 + (1 + counts.deviceCount - counts.upToDateCount)/2)
     runIn(retryDelay, refreshDevicesWithRetry)
@@ -183,19 +183,30 @@ def refreshWithRetry(data)
     data.retryInterval = Math.min((Integer) (retryInterval * 1.5), maximumRetryInterval)
 
     
-    publish([command:"updateDeviceList"])
+    publishCommand([command:"updateDeviceList"])
     runIn(retryInterval, refreshWithRetry, [data: data])
 }
 
-public publish(Map payload)
+public publishCommand(Map payload)
+{
+    publishCommand(Map payload, false)
+}
+
+public publishCommand(Map payload, Boolean includeKey)
 {
     reconectIfNessecary()
 
-    def details = parent.getHubDetails()    
+    def details = parent.getHubDetails()   
+
+    if(includeKey)
+    {
+        payload["key"] = details.hubKey
+    }
+
     def topic = "${details.hubTopic}/command"
     def payloadJson = JsonOutput.toJson(payload)    
-    logTrace("Publish: ${topic}, ${payloadJson}")
-    interfaces.mqtt.publish(topic, payloadJson)    
+    logTrace("publish: ${topic}, ${payloadJson}")
+    interfaces.mqtt.publishCommand(topic, payloadJson)    
 }
 
 def installed()

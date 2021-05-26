@@ -138,20 +138,20 @@ def startPositionChange(direction)
 def stopPositionChange()
 {
     state.lastMovementDirection = "partially open"
-    publish([command:"stopShade", includeKey:true])
+    publishCommand([command:"stopShade", includeKey:true])
     runIn(1, refresh);
 }
 
 def refresh()
 {
     def retryInterval = 10
-    publish(refreshAction())
+    publishCommand(refreshAction())
     runIn(retryInterval, refreshTimeout, [data: [lastRetryInterval:retryInterval]])
 }
 
 def refreshWithoutRetry()
 {
-    publish(refreshAction())
+    publishCommand(refreshAction())
 }
 
 def refreshAction()
@@ -172,7 +172,7 @@ def publishWithRetry(Map action, Map expected)
 {
     def retryInterval = 120
     def data =[data: [action:action, nexAction:"refresh", lastRetryInterval:retryInterval, expected:expected]]
-    publish(action)
+    publishCommand(action)
     runIn(retryInterval, movementTimeout, data)
 }
 
@@ -190,7 +190,7 @@ def refreshTimeout(data)
     
     data.lastRetryInterval = retryInterval;
 
-    publish(refreshAction())
+    publishCommand(refreshAction())
     runIn(retryInterval, refreshTimeout, [data: data])
 }
 
@@ -228,11 +228,11 @@ def movementTimeout(data)
 
     }
 
-    publish(action)
+    publishCommand(action)
     runIn(retryInterval, movementTimeout, [data: data])
 }
 
-def publish(Map action)
+def publishCommand(Map action)
 {
     if(!getMac())
     {
@@ -242,20 +242,14 @@ def publish(Map action)
     Boolean includeKey = action.includeKey
     Map parameters = action.parameters
 
-    def details = parent.getHubDetails()
     def payload = [command:command, mac:getMac()]
-
-    if(includeKey)
-    {
-        payload["key"] = details.hubKey
-    }
 
     if(parameters)
     {
         payload << parameters
     }
 
-    parent.publish(payload)    
+    parent.publishCommand(payload, includeKey)    
 }
 
 def installed()

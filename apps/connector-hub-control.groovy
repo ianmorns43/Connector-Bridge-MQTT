@@ -498,9 +498,9 @@ public brokerStatusChanged(evt)
     getHubDevice()?.brokerStatusChanged(evt)
 }
 
-public publish(Map payload)
+public publishCommand(Map payload, Boolean includeKey)
 {
-    getHubDevice()?.publish(payload)
+    getHubDevice()?.publishCommand(payload, includeKey)
 }
 
 public forwardMessage(Map message)
