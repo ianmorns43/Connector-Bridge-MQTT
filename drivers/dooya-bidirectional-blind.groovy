@@ -1,6 +1,3 @@
- import groovy.json.JsonSlurper
- import groovy.json.JsonOutput
-
  /**
  *  Dooya Bidirectional Blind
  *
@@ -92,14 +89,6 @@ def parse(Map message)
     {
         unschedule(movementTimeout)
         setShadeBasedOnPosition(attributes.position)
-    }
-}
-
-private updateAttribute(Map attributes, String attributeName)
-{
-    if(attributes.containsKey(attributeName))
-    {
-        sendEvent(name: attributeName, value: attributes[attributeName])
     }
 }
 
@@ -287,11 +276,6 @@ def startPing()
     def minute = Math.round(Math.random() * (refreshInterval - 1));
 
     schedule("${second} ${minute}/${refreshInterval} * ? * * *", "refreshWithoutRetry");
-}
-
-public setMac(mac)
-{
-    device.updateSetting("mac", mac)
 }
 
 public getMac()

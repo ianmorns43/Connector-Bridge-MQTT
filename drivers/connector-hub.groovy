@@ -189,7 +189,7 @@ def refreshWithRetry(data)
 
 public publishCommand(Map payload)
 {
-    publishCommand(Map payload, false)
+    publishCommand(payload, false)
 }
 
 public publishCommand(Map payload, Boolean includeKey)
@@ -206,7 +206,7 @@ public publishCommand(Map payload, Boolean includeKey)
     def topic = "${details.hubTopic}/command"
     def payloadJson = JsonOutput.toJson(payload)    
     logTrace("publish: ${topic}, ${payloadJson}")
-    interfaces.mqtt.publishCommand(topic, payloadJson)    
+    interfaces.mqtt.publish(topic, payloadJson)    
 }
 
 def installed()

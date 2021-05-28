@@ -161,6 +161,13 @@ def addBlindsPage()
             if(settings.blindToAdd)
             {
                 input "blindName", "text", title: "Blind name", required: true, submitOnChange: true
+                def blind = getHubDevice().getDeviceList().find{it.mac == settings.blindToAdd}
+                def isUnidirectional = !(blind?.isBidirectional)
+                logTrace ("Blind ${blind} is uni? ${isUnidirectional}")
+                if(isUnidirectional)
+                {
+                    input "openCloseTime", "number", title: "Time blind takes to fully open or close (s)", required: true, defaultValue: 20
+                }
             }
 
             if(settings.blindToAdd && settings.blindName)
@@ -190,12 +197,24 @@ def confirmBlindAddedPage()
             if(!state.blindAdded && settings.blindToAdd && settings.blindName)
             {
                 logTrace ("Adding ${settings.blindName}")
-                def child = addChildDevice("ianmorns_connector", "Dooya Bidirectional Blind", UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
-                child.setMac(settings.blindToAdd)
+
+                def blind = getHubDevice().getDeviceList().find{it.mac == settings.blindToAdd}
+                def isUnidirectional = !(blind?.isBidirectional)
+                logTrace ("Blind ${blind} is uni? ${isUnidirectional}")
+                def deviceType =  isUnidirectional? "Dooya Unidirectional Blind":"Dooya Bidirectional Blind"
+
+                def child = addChildDevice("ianmorns_connector", deviceType, UUID.randomUUID().toString(), [label: settings.blindName, isComponent: true])
+                child.updateSetting("mac", settings.blindToAdd)
+
+                if(isUnidirectional)
+                {
+                    child.updateSetting("openCloseTime", settings.openCloseTime)
+                }
 
                 app.updateSetting("addTheBlind", false)
                 app.removeSetting("blindName")
                 app.removeSetting("blindToAdd")
+                app.removeSetting("openCloseTime")
                 state.blindAdded = true
             }
             
@@ -348,8 +367,11 @@ def getDevicesAvailableToAdd()
 {
     def deviceList = getHubDevice().getDeviceList()
     def unasignedDevices = [:]
-    deviceList.findAll{it.isBidirectional}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each{ unasigned ->
-        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: Bi-directional ${unasigned.shadeType}"}
+    deviceList.findAll{it.isBidirectional != null}.findAll{ !app.getChildDevices().any{child -> child.getMac() == it.mac}}.each
+    { unasigned ->
+        def type = unasigned.isBidirectional? "Bidirectional ${unasigned.shadeType}":"Unidirectional"
+        unasignedDevices[unasigned.mac] = "Mac: ${unasigned.mac}, Type: ${type}"
+    }
 
     return unasignedDevices
 }
