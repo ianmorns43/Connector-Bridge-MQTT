@@ -45,31 +45,50 @@ def parse(Map message)
 
     sendEvent(name: "hubStatus", value: "online")
 
-    if(message.messageType == "moving")
+    if(message.messageType == "moving" && !!state.movement)
     {
-        def movementTime = estimateMovementTime(state.targetPosition)
+        state.movement["started"] = new Date().time
+        def movementTime = estimateMovementTime(state.movement.targetPosition)
 
         if(movementTime > 0)
         {
-            sendEvent(name: "windowShade", value: positionChange > 0 ? "opening" : "closing")
-            runIn(movementTime, updateShadeAnPosition)
+            sendEvent(name: "windowShade", value: state.movement.direction > 0 ? "opening" : "closing")
+            runIn(movementTime, finalShadeAnPositionUpdate)
+            schedule("0/1 * * * * ? *", intermediatePositionUpdate)
             
-            if(state.targetPosition != 100 && state.targetPosition != 0)
+            if(state.movement.targetPosition != 100 && state.movement.targetPosition != 0)
             {
-                runIn(movementTime, stopPositionChange)
+                runIn(movementTime, sendStopCommand)
             }
         }
         else
         {
-            updateShadeAnPosition()
+            finalShadeAnPositionUpdate()
         }
     }
 }
 
-def updateShadeAnPosition()
+def intermediatePositionUpdate()
 {
-    sendEvent(name: "windowShade", value: state.targetPosition == 100 ? "open" : (state.targetPosition == 0 ? "closed":"partially open"))
-    sendEvent(name: "position", value: state.targetPosition)  
+    def elapsed = new Date().time-state.movement.started
+    def positionChange = elapsed/(settings.openCloseTime * 1000.0) * 100
+    def position = (Integer) Math.round(state.movement.startPosition + state.movement.direction * positionChange)
+
+    position = Math.max(0,Math.min(100, position))
+    sendEvent(name: "position", value: position)
+    //logTrace("Running for: ${new Date().time-state.movementStarted}s")
+
+    return position
+}
+
+def finalShadeAnPositionUpdate()
+{
+    unschedule(intermediatePositionUpdate)
+    unschedule(sendStopCommand)
+    unschedule(finalShadeAnPositionUpdate)
+    sendEvent(name: "windowShade", value: state.movement.targetPosition == 100 ? "open" : (state.movement.targetPosition == 0 ? "closed":"partially open"))
+    sendEvent(name: "position", value: state.movement.targetPosition)
+    state.remove("movement")
 }
 
 def estimateMovementTime(position)
@@ -88,7 +107,8 @@ def setPosition(position)
         return
     }
 
-    state.targetPosition = position
+    def currentPosition = device.currentValue("position")
+    state.movement = [startPosition: currentPosition, targetPosition: position, direction: currentPosition < position ? 1:-1]
 
     def positionChange = position - (device.currentValue("position") ?:0)
 
@@ -121,8 +141,14 @@ def startPositionChange(direction)
 
 def stopPositionChange()
 {
+    sendStopCommand()
+    unschedule(intermediatePositionUpdate)
+    state.movement.targetPosition = intermediatePositionUpdate()
+}
+
+def sendStopCommand()
+{
     publishCommand([command:"stopShade", includeKey:true])
-    //TODO estimate position and shadeState
 }
 
 def publishCommand(Map action)
