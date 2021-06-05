@@ -1,5 +1,5 @@
 #include "connectorUdp.h"
-#include "deviceType.h"
+#include "apiCodes.h"
 
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
@@ -56,7 +56,7 @@ mqttMessage ConnectorUdp::loop()
                 auto device = data[i];
                 auto deviceType = (const char*)device["deviceType"];
 
-                if(DeviceType::RFMotor == deviceType)
+                if(ApiCodes::RFMotor == deviceType)
                 {
                     auto deviceMac = (const char*) device["mac"];
                     deviceList.push_back(deviceMac);
@@ -111,12 +111,12 @@ mqttMessage ConnectorUdp::createDeviceMessage(const char* updateType, JsonDocume
      
     auto deviceMac = std::string((const char *)doc["mac"]);
     auto bidirectional = data["wirelessMode"] == 1;
-    auto shadeType = DeviceType::ShadeTypeName(data["type"]);
+    auto shadeType = ApiCodes::ShadeTypeName(data["type"]);
     
 
     if(!bidirectional)
     {
-        auto operation = DeviceType::OperationName(data["operation"]);
+        auto operation = ApiCodes::OperationName(data["operation"]);
         //TODO add shadeType and operation to unidirectional blind
         return mqttMessage::createUniDirectionalDeviceMessage(deviceMac.c_str(), updateType, shadeType.c_str(), operation.c_str());
     }

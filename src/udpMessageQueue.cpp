@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "udpMessageQueue.h"
-#include "deviceType.h"
+#include "apiCodes.h"
 
 
 udpMessageQueue::udpMessageQueue()
@@ -141,7 +141,7 @@ void udpMessageQueue::queueDeviceOperationMessage(const char* key, const char* d
 std::string udpMessageQueue::basicDeviceMessage(const char* msgType, const char* deviceMac)
 {
     std::ostringstream stream;
-    stream << "\"msgType\":\"" << msgType << "\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << DeviceType::RFMotor << "\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\"";
+    stream << "\"msgType\":\"" << msgType << "\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << ApiCodes::RFMotor << "\",\"msgID\":\"" << udpMessage::TIMESTAMP_PLACEHOLDER << "\"";
     return stream.str();
 }
 

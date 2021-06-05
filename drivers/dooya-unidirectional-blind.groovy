@@ -43,6 +43,11 @@ def parse(Map message)
         return
     }
 
+    if(message.payload.containsKey("shadeType"))
+    {
+        device.setName(message.payload.shadeType)
+    }
+
     sendEvent(name: "hubStatus", value: "online")
 
     if(message.messageType == "moved")

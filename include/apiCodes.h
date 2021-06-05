@@ -4,7 +4,7 @@
 #include <string>
 #include <array>
 
-class DeviceType
+class ApiCodes
 {
     public:
 
@@ -18,7 +18,7 @@ class DeviceType
     static std::string OperationName(unsigned int operation);
 
     private:
-    DeviceType(){}
+    ApiCodes(){}
 
     static std::array<std::string, 14> shadeTypes;
     static std::array<std::string, 6> operationNames;
