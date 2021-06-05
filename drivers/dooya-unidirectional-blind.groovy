@@ -51,14 +51,13 @@ def parse(Map message)
     }
 }
 
-
 def handleBlindMoved(payload)
 {
     logTrace("moved received: ${payload}")
+    def operation = payload?.operation
     if(!state.movement)
     {
         logTrace("No movement recorded")
-        def operation = payload?.operation
         if(operation == "open" || operation == "close")
         {
             //If not movement is recorded, movement was probably intiated from connector app
@@ -70,8 +69,17 @@ def handleBlindMoved(payload)
     if(!!state.movement)
     {
         logTrace("Movement: ${state.movement}")
-        state.movement["started"] = new Date().time
-        def movementTime = estimateMovementTime(state.movement.targetPosition)
+        def movementTime
+        if(operation == "stop")
+        {
+            state.movement.targetPosition = estimateCurrentPosition(state.movement)
+            movementTime = 0
+        }
+        else
+        {
+            state.movement["started"] = new Date().time
+            movementTime = estimateMovementTime(state.movement.targetPosition)
+        }
 
         logTrace("Movement time: ${movementTime}")
         if(movementTime > 0)
@@ -156,11 +164,6 @@ def startPositionChange(direction)
 def stopPositionChange()
 {
     sendStopCommand()
-
-    if(!!state.movement)
-    {
-        state.movement.targetPosition = estimateCurrentPosition(state.movement)
-    }
 }
 
 def estimateCurrentPosition(Map movement)
