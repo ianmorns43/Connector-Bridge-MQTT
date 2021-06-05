@@ -45,7 +45,7 @@ def parse(Map message)
 
     sendEvent(name: "hubStatus", value: "online")
 
-    if(message.messageType == "moving" && !!state.movement)
+    if(message.messageType == "moved" && !!state.movement)
     {
         state.movement["started"] = new Date().time
         def movementTime = estimateMovementTime(state.movement.targetPosition)
