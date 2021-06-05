@@ -45,11 +45,35 @@ def parse(Map message)
 
     sendEvent(name: "hubStatus", value: "online")
 
-    if(message.messageType == "moved" && !!state.movement)
+    if(message.messageType == "moved")
     {
+        handleBlindMoved(message.payload)
+    }
+}
+
+
+def handleBlindMoved(payload)
+{
+    logTrace("moved received: ${payload}")
+    if(!state.movement)
+    {
+        logTrace("No movement recorded")
+        def operation = payload?.operation
+        if(operation == "open" || operation == "close")
+        {
+            //If not movement is recorded, movement was probably intiated from connector app
+            state.movement = createMovementRecord(operation == "open" ? 100:0)
+            logTrace("Movement created: ${state.movement}")
+        }
+    }
+
+    if(!!state.movement)
+    {
+        logTrace("Movement: ${state.movement}")
         state.movement["started"] = new Date().time
         def movementTime = estimateMovementTime(state.movement.targetPosition)
 
+        logTrace("Movement time: ${movementTime}")
         if(movementTime > 0)
         {
             sendEvent(name: "windowShade", value: state.movement.direction > 0 ? "opening" : "closing")
@@ -92,8 +116,7 @@ def setPosition(position)
         return
     }
 
-    def currentPosition = device.currentValue("position")
-    state.movement = [startPosition: currentPosition, targetPosition: position, direction: currentPosition < position ? 1:-1]
+    state.movement = createMovementRecord(position)
 
     def positionChange = position - (device.currentValue("position") ?:0)
 
@@ -105,6 +128,12 @@ def setPosition(position)
     {
         publishCommand([command:"closeShade", includeKey:true])
     }
+}
+
+def createMovementRecord(position)
+{
+    def currentPosition = device.currentValue("position")
+    return [startPosition: currentPosition, targetPosition: position, direction: currentPosition < position ? 1:-1]
 }
 
 def open()
