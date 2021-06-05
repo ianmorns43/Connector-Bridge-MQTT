@@ -15,11 +15,13 @@ class DeviceType
     static std::string WiFiReceiver;
 
     static std::string ShadeTypeName(unsigned int type);
+    static std::string OperationName(unsigned int operation);
 
     private:
     DeviceType(){}
 
     static std::array<std::string, 14> shadeTypes;
+    static std::array<std::string, 6> operationNames;
 };
 
 #endif

@@ -20,6 +20,16 @@ std::string DeviceType::ShadeTypeName(unsigned int type)
     return shadeTypes[type-1];
 }
 
+std::string DeviceType::OperationName(unsigned int operation)
+{
+    if(operation >= operationNames.size())
+    {
+        return "Unknown";
+    }
+    
+    return operationNames[operation];
+}
+
 std::array<std::string, 14> DeviceType::shadeTypes = {
     "Roller Blinds",
     "Venetian Blinds",
@@ -30,9 +40,18 @@ std::array<std::string, 14> DeviceType::shadeTypes = {
     "Roller Gate",
     "Awning",
     "TDBU",
-    "Day&night Blinds",
+    "Day and Night Blinds",
     "Dimming Blinds",
     "Curtain",
     "Curtain(Open Left)",
     "Curtain(Open Right)"
+};
+
+std::array<std::string, 6> DeviceType::operationNames = {
+    "close",
+    "open",
+    "stop",
+    "unknown(3)",
+    "unknown(4)",
+    "statusQuery"
 };

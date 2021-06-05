@@ -16,7 +16,7 @@ class mqttMessage
     static mqttMessage createDeviceListMessage(const char* hubMac, const DeviceList& deviceList);
     static mqttMessage createHeartbeatMessage(int deviceCount, const char* hubMac, int rssi);
     static mqttMessage createBiDirectionalDeviceMessage(const char* deviceMac, const char* updateType, int position, const char* shadeType, int batteryLevel, int rssi);
-    static mqttMessage createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType);
+    static mqttMessage createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType, const char* shadeType, const char* operation);
 
     private:
     mqttMessage(const char* topic, std::string& payload);

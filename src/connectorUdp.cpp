@@ -68,14 +68,17 @@ mqttMessage ConnectorUdp::loop()
         }
         else if(messageType == "WriteDeviceAck")
         {
+            //Serial.printf("Moving: %s\r\n", packet.c_str());
             return createDeviceMessage("moving", doc);            
         }
         else if(messageType == "Report") //When motor stops
         {
+            //Serial.printf("Moved: %s\r\n", packet.c_str());
             return createDeviceMessage("moved", doc);
         }
         else if(messageType == "ReadDeviceAck") //When asked for
-        {           
+        {
+            //Serial.printf("Status: %s\r\n", packet.c_str());           
             return createDeviceMessage("status", doc);
         }
 
@@ -108,16 +111,20 @@ mqttMessage ConnectorUdp::createDeviceMessage(const char* updateType, JsonDocume
      
     auto deviceMac = std::string((const char *)doc["mac"]);
     auto bidirectional = data["wirelessMode"] == 1;
+    auto shadeType = DeviceType::ShadeTypeName(data["type"]);
+    
 
     if(!bidirectional)
     {
-        return mqttMessage::createUniDirectionalDeviceMessage(deviceMac.c_str(), updateType);
+        auto operation = DeviceType::OperationName(data["operation"]);
+        //TODO add shadeType and operation to unidirectional blind
+        return mqttMessage::createUniDirectionalDeviceMessage(deviceMac.c_str(), updateType, shadeType.c_str(), operation.c_str());
     }
 
     auto batteryLevel = (int) data["batteryLevel"];
     auto position = (int) data["currentPosition"];
     auto rssi = (int) data["RSSI"];
-    auto shadeType = DeviceType::ShadeTypeName(data["type"]);
+    
 
     return mqttMessage::createBiDirectionalDeviceMessage(deviceMac.c_str(), updateType, position, shadeType.c_str(), batteryLevel, rssi);
 }

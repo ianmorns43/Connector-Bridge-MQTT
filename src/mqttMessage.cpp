@@ -85,12 +85,14 @@ mqttMessage mqttMessage::createBiDirectionalDeviceMessage(const char* deviceMac,
     return mqttMessage(topicStream.str().c_str(), devicePayload);
 }
 
-mqttMessage mqttMessage::createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType)
+mqttMessage mqttMessage::createUniDirectionalDeviceMessage(const char* deviceMac, const char* updateType, const char* shadeType, const char* operation)
 {
     std::ostringstream payloadStream;
     payloadStream << "{";
     payloadStream << "\"mac\":\"" << deviceMac << "\"";
     payloadStream << ",\"bidirectional\":false";
+    payloadStream << ",\"shadeType\":\"" << shadeType << "\"";
+    payloadStream << ",\"operation\":\"" << operation << "\"";
     payloadStream << "}";
 
     std::ostringstream topicStream;
