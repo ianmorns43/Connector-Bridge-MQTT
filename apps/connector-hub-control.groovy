@@ -415,7 +415,8 @@ def blindsTable(blinds)
                     "<thead>"+
                     "<tr>"+
                         "<th class='mdl-data-table__cell--non-numeric sort nameTD' data-sort='name'>Label (Name)</th>"+
-                        "<th class='mdl-data-table__cell--numeric sort positionTD' data-sort='position'>Position</th>"+
+                        "<th class='mdl-data-table__cell--non-numeric sort positionTD' data-sort='position'>Position</th>"+
+                        "<th class='mdl-data-table__cell--numeric sort batteryTD' data-sort='battery'>Battery (V)</th>"+
                     "</tr>"+
                     "</thead>"+
                     "<tbody class='list'>"
@@ -425,6 +426,8 @@ def blindsTable(blinds)
         logTrace('Blind: ${dni}, ${name}')
         def device = app.getChildDevice(dni)
         def position = device.currentValue("position")
+        def battery = device.currentValue("battery")?:""
+        def windowShade = device.currentValue("windowShade")
         table += "<tr data-device-id='${device.id}' data-parent-room-id='' class='device-row searchable-device-row'>"
 
 
@@ -439,11 +442,17 @@ def blindsTable(blinds)
             "</div>"+
         "</td>"
 
-        table += "<td data-order='${position}' class='mdl-data-table__cell--numeric positionTD'>"+
+        table += "<td data-order='${windowShade}' class='mdl-data-table__cell--non-numeric positionTD'>"+
             "<div>"+
-                "${position}"+
+                    "<div>${windowShade}</div>"+
+                    "<div style='padding-left:5px;font-size:12px;color:#666'>"+
+                        "${position}"+
+                    "</div>"+
             "</div>"+
-        "</div>"+
+        "</td>"
+
+        table += "<td data-order='${battery}' class='mdl-data-table__cell--numeric batteryTD'>"+
+            "${battery}"+
         "</td>"
 
         table += "</tr>"
