@@ -21,25 +21,42 @@ void setup()
   Serial.println();
 
   pinMode(LED_BUILTIN, OUTPUT);
-  
+  digitalWrite(LED_BUILTIN, LOW);
   Serial.println("Connecting to WIFI...");
+  
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
   
   wifi_station_set_hostname(MQTT_TOPIC);
   WiFiManager wifimanager;
   wifimanager.autoConnect(MQTT_TOPIC);
 
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+
   Serial.println("Connecting to mqtt broker");
   ConnectorMqttClient::setup(udpMessages);
+
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
 
   Serial.println("Opening UDP socket...");
   udpMessages.beginListening();
   udp.start();
+
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
 
   Serial.println("Initialising OTA update service...");
   std::ostringstream stream;
   stream <<"esp8266-" << MQTT_TOPIC;
   OTA::setup(stream.str().c_str());
   Serial.println("Ready...");
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void loop() 
