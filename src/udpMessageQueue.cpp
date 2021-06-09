@@ -2,6 +2,7 @@
 #include <ESP8266WiFi.h>
 #include "udpMessageQueue.h"
 #include "apiCodes.h"
+#include "flasher.h"
 
 
 udpMessageQueue::udpMessageQueue()
@@ -54,6 +55,7 @@ bool udpMessageQueue::sendNextMessage()
 
     auto message = messageQueue.front();
 
+    flasher::blinkOn(50);
     auto success = message->send(udpClient, timestamp.Generate());
     if(success)
     {

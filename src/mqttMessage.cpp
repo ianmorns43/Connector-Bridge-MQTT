@@ -1,5 +1,6 @@
 #include "mqttMessage.h"
 #include <Arduino.h>
+#include "flasher.h"
 
 mqttMessage::mqttMessage(const char* topic, std::string& payload)
 :topic(topic), payload(payload)
@@ -12,6 +13,7 @@ bool mqttMessage::empty()
 
 void mqttMessage::publish(PubSubClient& mqttClient)
 {
+    flasher::blinkOn(50);
     std::ostringstream stream;
     stream << MQTT_TOPIC << "/" << topic;
     auto fullTopic = stream.str().c_str();

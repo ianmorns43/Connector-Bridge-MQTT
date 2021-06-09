@@ -8,6 +8,7 @@
 #include "accessTokenGenerator.h"
 #include "connectorUdp.h"
 #include "connectorMqttClient.h"
+#include "flasher.h"
 
 #define READ_WRITE_PIN gpio_num_t::GPIO_NUM_2
 enum READ_WRITE{Write=HIGH, Read=LOW};
@@ -20,47 +21,40 @@ void setup()
   Serial.begin(9600);
   Serial.println();
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
+  flasher::start(LED_BUILTIN);
   Serial.println("Connecting to WIFI...");
   
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
+  flasher::offForDelay(100);
   
   wifi_station_set_hostname(MQTT_TOPIC);
   WiFiManager wifimanager;
   wifimanager.autoConnect(MQTT_TOPIC);
 
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
+  flasher::offForDelay(100);
 
   Serial.println("Connecting to mqtt broker");
   ConnectorMqttClient::setup(udpMessages);
 
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
+  flasher::offForDelay(100);
 
   Serial.println("Opening UDP socket...");
   udpMessages.beginListening();
   udp.start();
 
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
+  flasher::offForDelay(100);
 
   Serial.println("Initialising OTA update service...");
   std::ostringstream stream;
   stream <<"esp8266-" << MQTT_TOPIC;
   OTA::setup(stream.str().c_str());
   Serial.println("Ready...");
-  digitalWrite(LED_BUILTIN, HIGH);
+
+  flasher::switchOff();
 }
 
 void loop() 
 {
+  flasher::loop();
   OTA::loop();
   auto mqttMessage = udp.loop();
   if(mqttMessage.empty())
