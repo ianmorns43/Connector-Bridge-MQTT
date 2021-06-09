@@ -2,6 +2,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
 #include <string>
+#include <sstream>
+#include "OTA.h"
 #include "udpMessageQueue.h"
 #include "accessTokenGenerator.h"
 #include "connectorUdp.h"
@@ -9,7 +11,6 @@
 
 #define READ_WRITE_PIN gpio_num_t::GPIO_NUM_2
 enum READ_WRITE{Write=HIGH, Read=LOW};
-
 
 udpMessageQueue udpMessages;
 ConnectorUdp udp(udpMessages);
@@ -33,11 +34,17 @@ void setup()
   Serial.println("Opening UDP socket...");
   udpMessages.beginListening();
   udp.start();
+
+  Serial.println("Initialising OTA update service...");
+  std::ostringstream stream;
+  stream <<"esp8266-" << MQTT_TOPIC;
+  OTA::setup(stream.str().c_str());
   Serial.println("Ready...");
 }
 
 void loop() 
 {
+  OTA::loop();
   auto mqttMessage = udp.loop();
   if(mqttMessage.empty())
   {
