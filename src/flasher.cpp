@@ -6,9 +6,11 @@
 uint8_t flasher::_ledPin = 0;
 unsigned long flasher::_nextActionTime = 0;
 flasher::Action flasher::_nextAction = flasher::Action::none;
+flasher::Action flasher::_lastAction = flasher::Action::none;
 
 void flasher::switchLed(flasher::Action action)
 {
+    _lastAction = action;
     switch(action)
     {
         case Action::on:
@@ -52,6 +54,15 @@ void flasher::blinkOn(unsigned long ms)
     switchOn();
     _nextAction = Action::off;
     _nextActionTime = millis() + ms;
+}
+
+void flasher::flash(unsigned long ms)
+{
+    if(_nextAction == Action::none)
+    {
+        _nextAction = _lastAction == Action::off ? Action::on : Action::off;
+        _nextActionTime = millis() + ms;
+    }
 }
 
 void flasher::loop()

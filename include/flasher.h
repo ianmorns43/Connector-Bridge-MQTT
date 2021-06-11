@@ -13,6 +13,7 @@ class flasher
         static void switchOff();
         static void offForDelay(unsigned long ms);
         static void blinkOn(unsigned long ms);
+        static void flash(unsigned long ms);
 
 
     private:
@@ -20,6 +21,7 @@ class flasher
         static uint8_t _ledPin;
         static unsigned long _nextActionTime;
         static Action _nextAction;
+        static Action _lastAction;
         static void switchLed(Action action);
 
 };

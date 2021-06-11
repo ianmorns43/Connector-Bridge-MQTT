@@ -1,5 +1,6 @@
 #include "connectorUdp.h"
 #include "apiCodes.h"
+#include "flasher.h"
 
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
@@ -44,6 +45,7 @@ mqttMessage ConnectorUdp::loop()
         else if(messageType == "GetDeviceListAck")
         {
             deviceListReceived = true;
+            flasher::switchOff();
 
             auto hubMac = parseHubDetailsAndFindMac(doc);
             auto data = doc["data"];
@@ -90,6 +92,11 @@ mqttMessage ConnectorUdp::loop()
         deviceListReceived = false;
         Serial.println("Asking hub to identify itself...");
         udpMessages.queueMulticastDeviceListRequest();
+    }
+
+    if(!deviceListReceived)
+    {
+        flasher::flash(250u);
     }
 
     return mqttMessage::emptyMessage();
