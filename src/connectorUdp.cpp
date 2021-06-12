@@ -1,7 +1,22 @@
 #include "connectorUdp.h"
+#include <ESP8266WiFi.h>
 #include "apiCodes.h"
 #include "flasher.h"
+#include "apiCodes.h"
 #include "udpMessage.h"
+
+
+TimeStampGenerator ConnectorUdp::timestamp;
+AccessTokenGenerator ConnectorUdp::accessToken;
+
+WiFiUDP ConnectorUdp::udpClient;
+IPAddress ConnectorUdp::unicastIp;
+std::string ConnectorUdp::messageBuffer;
+const IPAddress ConnectorUdp::multicastIp(238,0,0,18);
+const unsigned int ConnectorUdp::listenPort = 32101;  // port to listen on
+const unsigned int ConnectorUdp::sendPort = 32100;  // port to send on
+const std::string ConnectorUdp::noMessage = "";
+const std::string ConnectorUdp::TIMESTAMP_PLACEHOLDER = "____TIMESTAMP____";
 
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
@@ -19,7 +34,7 @@ void ConnectorUdp::start()
 
 mqttMessage ConnectorUdp::loop()
 {
-    auto packet = udpMessage::readNextIncomingPacket(); //TODO does read next packet blong here
+    auto packet = readNextIncomingPacket();
     
     if (!packet.empty())
     {       
@@ -92,7 +107,7 @@ mqttMessage ConnectorUdp::loop()
         lastTimeDeviceListRequested = millis();
         deviceListReceived = false;
         Serial.println("Asking hub to identify itself...");
-        messageQueue.enqueue(udpMessage::createMulticastDeviceListRequest());
+        messageQueue.enqueue(createMulticastDeviceListRequest());
     }
 
     if(!deviceListReceived)
@@ -101,6 +116,60 @@ mqttMessage ConnectorUdp::loop()
     }
 
     return mqttMessage::emptyMessage();
+}
+
+const std::string& ConnectorUdp::readNextIncomingPacket()
+{
+    int packetSize = udpClient.parsePacket();
+    if(packetSize == 0)
+    {
+        return noMessage;
+    }
+    
+    Serial.printf("Received %d bytes\r\n", packetSize);
+    messageBuffer.erase();
+    messageBuffer.reserve(packetSize);
+
+    for(auto i = 0; i < packetSize; i++)
+    {
+        messageBuffer.push_back(udpClient.read());
+    }
+
+    Serial.printf("Read %d bytes from %s:%d, on %s:%d\n", messageBuffer.size(), udpClient.remoteIP().toString().c_str(), udpClient.remotePort(), udpClient.destinationIP().toString().c_str(), listenPort);
+    //Serial.println(messageBuffer.c_str());
+
+    if(udpClient.remoteIP() != multicastIp)
+    {
+        unicastIp = udpClient.remoteIP();
+    }
+
+    return messageBuffer;
+}
+
+bool ConnectorUdp::sendUnicast(const std::string& body)
+{
+    return send(unicastIp, body);
+}
+
+bool ConnectorUdp::sendMulticast(const std::string& body)
+{
+    return send(multicastIp, body);
+}
+
+bool ConnectorUdp::send(IPAddress sendIp, const std::string& body)
+{
+    auto tempBody = body;
+    auto index = tempBody.find(TIMESTAMP_PLACEHOLDER);
+    if(index != std::string::npos)
+    {
+        auto timestampCode = timestamp.Generate();
+        tempBody.replace(index, timestampCode.size(), timestampCode);
+    }
+
+    Serial.printf("To %s:%d %s\r\n", sendIp.toString().c_str(), sendPort, tempBody.c_str());
+    udpClient.beginPacket(sendIp, sendPort);
+    udpClient.write(tempBody.c_str(), tempBody.length());
+    return udpClient.endPacket() != 0;
 }
 
 mqttMessage ConnectorUdp::createDeviceMessage(const char* updateType, JsonDocument& doc)
@@ -140,9 +209,85 @@ mqttMessage ConnectorUdp::createDeviceMessage(const char* updateType, JsonDocume
 std::string ConnectorUdp::parseHubDetailsAndFindMac(JsonDocument& doc)
 {
     auto token = (const char *)doc["token"];
-    udpMessage::setHubToken(token);
+    accessToken.setToken(token);
     return std::string((const char *)doc["mac"]);
 }
 
 
+void ConnectorUdp::beginListening()
+{
+    timestamp.start();
+    udpClient.beginMulticast(WiFi.localIP(), multicastIp, listenPort);
+}
+
+IMessage* ConnectorUdp::createUnicastMessage(const char* body)
+{
+    //TODO: we cant send unicast messages until we know the IP address of the Hub
+    return new unicastUdpMessage(body);
+}
+
+IMessage* ConnectorUdp::createMulticastMessage(const char* body)
+{
+    return new multicastUdpMessage(body);
+}
+
+IMessage* ConnectorUdp::createMulticastDeviceListRequest()
+{
+    std::ostringstream stream;
+    stream << "{ \"msgType\":\"GetDeviceList\",\"msgID\":\"" << TIMESTAMP_PLACEHOLDER << "\" }";  
+    return createMulticastMessage(stream.str().c_str());
+}
+
+IMessage* ConnectorUdp::createDeviceStatusRequest(const char* deviceMac)
+{
+    std::ostringstream stream;
+    stream << "{" << basicDeviceMessage("ReadDevice", deviceMac) <<"}";
+    return createUnicastMessage(stream.str().c_str());
+}
+
+IMessage* ConnectorUdp::createSetPositionRequest(const char* key, const char* deviceMac, int newPosition)
+{
+    //Dooya: setting position 0 opens the blind and position 100 closes it
+    //Alexa: setting position 100 opens the blind and position 0 closes it
+    //We need to inver the position we are asking for so Dooya blind does what Alexa tells it to
+    std::ostringstream stream;
+    stream << "{" << deviceMessageWithAccessToken("WriteDevice", key, deviceMac) << ",\"data\":{\"targetPosition\":" << 100-newPosition << "}}";
+    return createUnicastMessage(stream.str().c_str());
+}
+
+IMessage* ConnectorUdp::createOpenRequest(const char* key, const char* deviceMac)
+{
+    return createDeviceOperationMessage(key, deviceMac, 1);
+}
+
+IMessage* ConnectorUdp::createCloseRequest(const char* key, const char* deviceMac)
+{
+    return createDeviceOperationMessage(key, deviceMac, 0);
+}
+
+IMessage* ConnectorUdp::createStopRequest(const char* key, const char* deviceMac)
+{
+    return createDeviceOperationMessage(key, deviceMac, 2);
+}
+    
+IMessage* ConnectorUdp::createDeviceOperationMessage(const char* key, const char* deviceMac, int operation)
+{
+    std::ostringstream stream;
+    stream << "{" << deviceMessageWithAccessToken("WriteDevice", key, deviceMac) << ",\"data\":{\"operation\":" << operation << "}}";
+    return createUnicastMessage(stream.str().c_str());
+}
+
+std::string ConnectorUdp::basicDeviceMessage(const char* msgType, const char* deviceMac)
+{
+    std::ostringstream stream;
+    stream << "\"msgType\":\"" << msgType << "\",\"mac\":\"" << deviceMac << "\",\"deviceType\":\"" << ApiCodes::RFMotor << "\",\"msgID\":\"" << TIMESTAMP_PLACEHOLDER << "\"";
+    return stream.str();
+}
+
+std::string ConnectorUdp::deviceMessageWithAccessToken(const char* msgType, const char* key, const char* deviceMac)
+{
+    std::ostringstream stream;
+    stream << basicDeviceMessage(msgType, deviceMac) << ",\"AccessToken\":\"" << accessToken.getAccessToken(key) << "\"";
+    return stream.str();
+}
 

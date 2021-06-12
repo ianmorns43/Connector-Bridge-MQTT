@@ -2,7 +2,7 @@
 #include <sstream>
 #include "ArduinoJson.h"
 #include "mqttParams.h"
-#include "udpMessage.h"
+#include "connectorUdp.h"
 
 WiFiClient ConnectorMqttClient::espClient;
 PubSubClient ConnectorMqttClient::mqttClient(espClient);
@@ -77,7 +77,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     auto command = std::string(command_ptr);
     if(command == "updateDeviceList")
     {
-        messageQueue->enqueue(udpMessage::createMulticastDeviceListRequest());
+        messageQueue->enqueue(ConnectorUdp::createMulticastDeviceListRequest());
     }
     else if(command == "getStatus")
     {
@@ -86,7 +86,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             //TOOD publish and error message
             return;
         }
-        messageQueue->enqueue(udpMessage::createDeviceStatusRequest(mac));
+        messageQueue->enqueue(ConnectorUdp::createDeviceStatusRequest(mac));
     }
     else if(command == "moveShade")
     {
@@ -98,7 +98,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->enqueue(udpMessage::createSetPositionRequest((const char*)key_ptr, mac, (int) position_ptr));
+        messageQueue->enqueue(ConnectorUdp::createSetPositionRequest((const char*)key_ptr, mac, (int) position_ptr));
     }
     else if(command == "openShade")
     {
@@ -109,7 +109,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->enqueue(udpMessage::createOpenRequest((const char*)key_ptr, mac));
+        messageQueue->enqueue(ConnectorUdp::createOpenRequest((const char*)key_ptr, mac));
     }
     else if(command == "closeShade")
     {
@@ -120,7 +120,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->enqueue(udpMessage::createCloseRequest((const char*)key_ptr, mac));
+        messageQueue->enqueue(ConnectorUdp::createCloseRequest((const char*)key_ptr, mac));
     }
     else if(command == "stopShade")
     {
@@ -131,7 +131,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->enqueue(udpMessage::createStopRequest((const char*)key_ptr, mac));
+        messageQueue->enqueue(ConnectorUdp::createStopRequest((const char*)key_ptr, mac));
     }
     else
     {

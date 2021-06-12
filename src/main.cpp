@@ -5,7 +5,6 @@
 #include <sstream>
 #include "OTA.h"
 #include "transmitQueue.h"
-#include "udpMessage.h"
 #include "accessTokenGenerator.h"
 #include "connectorUdp.h"
 #include "connectorMqttClient.h"
@@ -39,7 +38,7 @@ void setup()
   flasher::offForDelay(100);
 
   Serial.println("Opening UDP socket...");
-  udpMessage::beginListening();
+  ConnectorUdp::beginListening();
   udp.start();
 
   flasher::offForDelay(100);
