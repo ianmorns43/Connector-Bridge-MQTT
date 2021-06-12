@@ -1,18 +1,18 @@
 #include <Arduino.h>
-#include "udpMessageQueue.h"
+#include "transmitQueue.h"
 #include "flasher.h"
 
 
-udpMessageQueue::udpMessageQueue()
+TransmitQueue::TransmitQueue()
 {
 }
 
-void udpMessageQueue::enqueue(IMessage* message)
+void TransmitQueue::enqueue(IMessage* message)
 {
     messageQueue.push(message);
 }
 
-void udpMessageQueue::sendNextMessage()
+void TransmitQueue::sendNextMessage()
 {
     auto now = millis();
     

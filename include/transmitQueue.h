@@ -1,5 +1,5 @@
-#ifndef UDP_MESSAGE_QUEUE_H
-#define UDP_MESSAGE_QUEUE_H
+#ifndef TRANSMIT_QUEUE_H
+#define TRANSMIT_QUEUE_H
 
 #include <WiFiUdp.h>
 #include <queue>
@@ -7,10 +7,10 @@
 #include "IMessage.h"
 
 
-class udpMessageQueue
+class TransmitQueue
 {
     public:
-    udpMessageQueue();
+    TransmitQueue();
     void enqueue(IMessage* message);
     void sendNextMessage();
 

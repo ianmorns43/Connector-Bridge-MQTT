@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 #include "OTA.h"
-#include "udpMessageQueue.h"
+#include "transmitQueue.h"
 #include "udpMessage.h"
 #include "accessTokenGenerator.h"
 #include "connectorUdp.h"
@@ -14,8 +14,8 @@
 #define READ_WRITE_PIN gpio_num_t::GPIO_NUM_2
 enum READ_WRITE{Write=HIGH, Read=LOW};
 
-udpMessageQueue udpMessages;
-ConnectorUdp udp(udpMessages);
+TransmitQueue messageQueue;
+ConnectorUdp udp(messageQueue);
 
 void setup()
 {
@@ -34,7 +34,7 @@ void setup()
   flasher::offForDelay(100);
 
   Serial.println("Connecting to mqtt broker");
-  ConnectorMqttClient::setup(udpMessages);
+  ConnectorMqttClient::setup(messageQueue);
 
   flasher::offForDelay(100);
 
@@ -60,7 +60,7 @@ void loop()
   auto mqttMessage = udp.loop();
   if(mqttMessage.empty())
   {
-    udpMessages.sendNextMessage();
+    messageQueue.sendNextMessage();
   }
   else
   {

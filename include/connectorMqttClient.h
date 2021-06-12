@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <ESP8266WiFi.h>
-#include "udpMessageQueue.h"
+#include "transmitQueue.h"
 
 class ConnectorMqttClient
 {
     public:
 
-    static void setup(udpMessageQueue& messageQueueRef);
+    static void setup(TransmitQueue& messageQueueRef);
     static void loop();
 
     static PubSubClient mqttClient;  
@@ -22,7 +22,7 @@ class ConnectorMqttClient
 
     static WiFiClient espClient;  
 
-    static udpMessageQueue* messageQueue;
+    static TransmitQueue* messageQueue;
 };
 
 #endif

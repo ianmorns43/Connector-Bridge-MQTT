@@ -8,7 +8,7 @@ WiFiClient ConnectorMqttClient::espClient;
 PubSubClient ConnectorMqttClient::mqttClient(espClient);
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
-udpMessageQueue* ConnectorMqttClient::messageQueue = nullptr;
+TransmitQueue* ConnectorMqttClient::messageQueue = nullptr;
 
 void ConnectorMqttClient::mqttConnect()
 {
@@ -139,7 +139,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     }
 }
 
-void ConnectorMqttClient::setup(udpMessageQueue& messageQueueRef)
+void ConnectorMqttClient::setup(TransmitQueue& messageQueueRef)
 {           
     messageQueue = &messageQueueRef;
     mqttClient.setServer(MQTT_BROKER_IP, 1883);

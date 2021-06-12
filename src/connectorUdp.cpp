@@ -5,8 +5,8 @@
 
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
-ConnectorUdp::ConnectorUdp(udpMessageQueue& udpMessages)
-:udpMessages(udpMessages)
+ConnectorUdp::ConnectorUdp(TransmitQueue& messageQueue)
+:messageQueue(messageQueue)
 {
     start();
 }
@@ -92,7 +92,7 @@ mqttMessage ConnectorUdp::loop()
         lastTimeDeviceListRequested = millis();
         deviceListReceived = false;
         Serial.println("Asking hub to identify itself...");
-        udpMessages.enqueue(udpMessage::createMulticastDeviceListRequest());
+        messageQueue.enqueue(udpMessage::createMulticastDeviceListRequest());
     }
 
     if(!deviceListReceived)
