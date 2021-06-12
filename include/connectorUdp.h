@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <string>
 #include <vector>
+#include <WiFiUdp.h>
 #include "ArduinoJson.h"
 #include "transmitQueue.h"
 #include "mqttMessage.h"

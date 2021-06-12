@@ -1,7 +1,6 @@
 #ifndef TRANSMIT_QUEUE_H
 #define TRANSMIT_QUEUE_H
 
-#include <WiFiUdp.h>
 #include <queue>
 #include <string>
 #include "IMessage.h"
