@@ -2,6 +2,7 @@
 #include <sstream>
 #include "ArduinoJson.h"
 #include "mqttParams.h"
+#include "udpMessage.h"
 
 WiFiClient ConnectorMqttClient::espClient;
 PubSubClient ConnectorMqttClient::mqttClient(espClient);
@@ -76,7 +77,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
     auto command = std::string(command_ptr);
     if(command == "updateDeviceList")
     {
-        messageQueue->queueMulticastDeviceListRequest();
+        messageQueue->enqueue(udpMessage::createMulticastDeviceListRequest());
     }
     else if(command == "getStatus")
     {
@@ -85,7 +86,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             //TOOD publish and error message
             return;
         }
-        messageQueue->queueDeviceStatusRequest(mac);
+        messageQueue->enqueue(udpMessage::createDeviceStatusRequest(mac));
     }
     else if(command == "moveShade")
     {
@@ -97,7 +98,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->queueSetPositionRequest((const char*)key_ptr, mac, (int) position_ptr);
+        messageQueue->enqueue(udpMessage::createSetPositionRequest((const char*)key_ptr, mac, (int) position_ptr));
     }
     else if(command == "openShade")
     {
@@ -108,7 +109,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->queueOpenRequest((const char*)key_ptr, mac);
+        messageQueue->enqueue(udpMessage::createOpenRequest((const char*)key_ptr, mac));
     }
     else if(command == "closeShade")
     {
@@ -119,7 +120,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->queueCloseRequest((const char*)key_ptr, mac);
+        messageQueue->enqueue(udpMessage::createCloseRequest((const char*)key_ptr, mac));
     }
     else if(command == "stopShade")
     {
@@ -130,7 +131,7 @@ void ConnectorMqttClient::mqttCallback(std::string topic, byte* message, unsigne
             return;
         }
 
-        messageQueue->queueStopRequest((const char*)key_ptr, mac);
+        messageQueue->enqueue(udpMessage::createStopRequest((const char*)key_ptr, mac));
     }
     else
     {

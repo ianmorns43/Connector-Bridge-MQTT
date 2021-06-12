@@ -1,6 +1,7 @@
 #include "connectorUdp.h"
 #include "apiCodes.h"
 #include "flasher.h"
+#include "udpMessage.h"
 
 typedef StaticJsonDocument<2048> JsonDocumentRoot;
 
@@ -18,7 +19,7 @@ void ConnectorUdp::start()
 
 mqttMessage ConnectorUdp::loop()
 {
-    auto packet = udpMessages.readNextIncomingPacket();
+    auto packet = udpMessage::readNextIncomingPacket(); //TODO does read next packet blong here
     
     if (!packet.empty())
     {       
@@ -91,7 +92,7 @@ mqttMessage ConnectorUdp::loop()
         lastTimeDeviceListRequested = millis();
         deviceListReceived = false;
         Serial.println("Asking hub to identify itself...");
-        udpMessages.queueMulticastDeviceListRequest();
+        udpMessages.enqueue(udpMessage::createMulticastDeviceListRequest());
     }
 
     if(!deviceListReceived)
@@ -139,7 +140,7 @@ mqttMessage ConnectorUdp::createDeviceMessage(const char* updateType, JsonDocume
 std::string ConnectorUdp::parseHubDetailsAndFindMac(JsonDocument& doc)
 {
     auto token = (const char *)doc["token"];
-    udpMessages.setHubToken(token);
+    udpMessage::setHubToken(token);
     return std::string((const char *)doc["mac"]);
 }
 
