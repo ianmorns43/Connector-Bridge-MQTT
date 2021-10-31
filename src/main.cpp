@@ -10,7 +10,7 @@
 #include "connectorMqttClient.h"
 #include "flasher.h"
 
-#define READ_WRITE_PIN gpio_num_t::GPIO_NUM_2
+
 enum READ_WRITE{Write=HIGH, Read=LOW};
 
 TransmitQueue messageQueue;
