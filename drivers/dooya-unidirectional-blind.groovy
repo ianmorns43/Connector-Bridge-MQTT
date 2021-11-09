@@ -16,6 +16,7 @@
 metadata {
 	definition (name: "Dooya Unidirectional Blind", namespace: "ianmorns_connector", author: "Ian Morns") {
 		capability "WindowShade"
+        capability "Switch"
         capability "Actuator"
 
         attribute "hubStatus", "ENUM", ["online","offline","unknown"]
@@ -119,8 +120,37 @@ def estimateMovementTime(position)
     return (Integer) (Math.abs(positionChange) / 100 * settings.openCloseTime)
 }
 
+def isActive()
+{
+    def active = device.currentValue("switch")
+
+    //Make on the default value
+    if(active == null)
+    {
+        active = "on"
+        sendEvent(name: "switch", value: "on")
+    }
+
+    return active != "off"
+}
+
+def on()
+{
+    sendEvent(name: "switch", value: "on")
+}
+
+def off()
+{
+    sendEvent(name: "switch", value: "off")
+}
+
 def setPosition(position)
 {
+    if(!isActive())
+    {
+        return
+    }
+
     logTrace("SetPosition: ${position}");
     def movementTime = estimateMovementTime(position)
 

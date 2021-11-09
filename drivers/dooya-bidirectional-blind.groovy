@@ -15,7 +15,8 @@
  */
 metadata {
 	definition (name: "Dooya Bidirectional Blind", namespace: "ianmorns_connector", author: "Ian Morns") {
-		capability "WindowShade"
+		capability "WindowShade"        
+        capability "Switch"
         capability "Refresh"
         capability "Battery"
         capability "SignalStrength"
@@ -98,8 +99,37 @@ def setShadeBasedOnPosition(position)
     sendEvent(name: "windowShade", value: shade);
 }
 
+def isActive()
+{
+    def active = device.currentValue("switch")
+
+    //Make on the default value
+    if(active == null)
+    {
+        active = "on"
+        sendEvent(name: "switch", value: "on")
+    }
+
+    return active != "off"
+}
+
+def on()
+{
+    sendEvent(name: "switch", value: "on")
+}
+
+def off()
+{
+    sendEvent(name: "switch", value: "off")
+}
+
 def setPosition(position)
 {
+    if(!isActive())
+    {
+        return
+    }
+
     logTrace("SetPosition: ${position}");
     state.lastMovementDirection = position > device.currentValue("position") ? "opening" : "closing"
     publishWithRetry([command:"moveShade", includeKey:true, parameters:[position:position]], [position:position])
@@ -107,6 +137,11 @@ def setPosition(position)
 
 def open()
 {
+    if(!isActive())
+    {
+        return
+    }
+
     logTrace("Open")
     state.lastMovementDirection = "opening"
     publishWithRetry([command:"openShade", includeKey:true], [windowShade:"open"])
@@ -114,6 +149,11 @@ def open()
 
 def close()
 {
+    if(!isActive())
+    {
+        return
+    }
+
     logTrace("Close")
     state.lastMovementDirection = "closing"
     publishWithRetry([command:"closeShade", includeKey:true], [windowShade:"closed"])
