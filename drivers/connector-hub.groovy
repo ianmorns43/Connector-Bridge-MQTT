@@ -24,7 +24,7 @@ metadata {
         capability "Actuator"
         capability "SignalStrength"
         
-        command "Reset"
+        command "reset"
 
         attribute "lastRefreshed", "text"
         attribute "deviceCount", "NUMBER"
@@ -67,10 +67,17 @@ def parse(String description)
     if(messageType == "heartbeat")
     {
         sendEvent(name:"rssi", value:payload.rssi)
-        if(payload.deviceCount != device.currentValue("deviceCount"))
+        if(payload.deviceCount < device.currentValue("deviceCount"))
         {
+            //Looks like a device has been deleted from the hub. Clear and rebuild the device list
+            reset()
+        }
+        else if(payload.deviceCount > device.currentValue("deviceCount"))
+        {
+            //Looks like a device has been added to the hub. Try and find out about it
             refresh()
         }
+
         return
     }
 
@@ -81,13 +88,7 @@ def parse(String description)
 
         //Add any new devices to the stored list
         payload.deviceMacs.findAll{deviceMac -> !state.deviceList.any{it.mac==deviceMac} }?.each{ state.deviceList << [mac:it]}
-
-        //If the 2 lists are different sizes, that means 1 or more devices have been removed. Remove them from our list
-        if(state.deviceList.size() > payload.deviceMacs.size())
-        {
-            state.deviceList = state.deviceList.findAll{ stored -> payload.deviceMacs.any{macOnHub -> stored.mac == macOnHub}}
-        }
-       
+      
         refreshDevicesWithRetry()
         return
     }
@@ -157,7 +158,7 @@ def refreshDevicesWithRetry()
     runIn(retryDelay, refreshDevicesWithRetry)
 }
 
-def Reset()
+def reset()
 {
     state.deviceList = []
     updateDeviceCounts()
