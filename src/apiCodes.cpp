@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "apiCodes.h"
-
+#include <string>
+#include <sstream>
 
 //The code returned for different device types in Device List
 std::string ApiCodes::RFMotor = "10000000";
@@ -12,9 +13,17 @@ std::string ApiCodes::WiFiReceiver = "22000005";
 std::string ApiCodes::ShadeTypeName(unsigned int type)
 {
     //Serial.printf("Type value: %d\r\n", type);
+    //Dont know why but a Pleated Blind is being reported as type 42 (either that or I set the blind up incorrectly)
+    if(type == 42)
+    {
+        return "Pleated Blind";
+    }
+
     if(type < 1 || type > shadeTypes.size())
     {
-        return "Unknown";
+        std::ostringstream payloadStream;
+        payloadStream << "Unknown (" << type << ")";
+        return payloadStream.str();
     }
     
     return shadeTypes[type-1];
