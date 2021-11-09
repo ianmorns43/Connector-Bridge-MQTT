@@ -162,14 +162,10 @@ def Reset()
     state.deviceList = []
     updateDeviceCounts()
     refresh()
-
-    //state.deviceList << [shadeType:"Roller Blinds", isBidirectional:true, mac:"f008d1edd4ec0001"]
-    //updateDeviceCounts()
 }
 
 def refresh()
 {
-    //state.deviceList.each{it.isBidirectional = null}
     refreshWithRetry([retryInterval:10])
 }
 
