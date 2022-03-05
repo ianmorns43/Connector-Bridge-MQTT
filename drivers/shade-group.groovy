@@ -16,6 +16,7 @@
 metadata {
 	definition (name: "Shade Group", namespace: "ianmorns_connector", author: "Ian Morns") {
 		capability "WindowShade"
+        capability "Switch"
         //https://docs.hubitat.com/index.php?title=Driver_Capability_List
 	}
     
@@ -47,6 +48,18 @@ def close()
 {
     logTrace("Close")
     parent.close()
+}
+
+def on()
+{
+    logTrace("On")
+    parent.on()
+}
+
+def off()
+{
+    logTrace("Off")
+    parent.off()
 }
 
 def startPositionChange(direction)

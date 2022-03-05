@@ -95,7 +95,13 @@ def initialize()
     app.updateLabel(settings.appName);
 
     subscribe(settings.shades, "position", positionChanged)
-    subscribe(settings.shades, "windowShade", shadeChanged)     
+    subscribe(settings.shades, "windowShade", shadeChanged)
+    subscribe(switchDevices(), "switch", switchChanged)   
+}
+
+def switchDevices()
+{
+    return settings.shades.findAll{ shade -> shade.capabilities.any{ capability -> capability.name == "Switch"}}
 }
 
 def positionChanged(evt)
@@ -113,6 +119,15 @@ def shadeChanged(evt)
     getChildDevice()?.sendEvent(name: "windowShade", value: windowShade)
 }
 
+def switchChanged(evt)
+{
+    def variants = switchDevices().unique{it.currentValue("switch")}
+    if(variants.size() == 1)
+    {
+        getChildDevice()?.sendEvent(name: "switch", value: variants.first().currentValue("switch"))   
+    }
+}
+
 public open()
 {
     settings.shades?.each{it.open()}
@@ -121,6 +136,16 @@ public open()
 public close()
 {
     settings.shades?.each{it.close()}
+}
+
+public on()
+{
+    switchDevices().each{it.on()}
+}
+
+public off()
+{
+    switchDevices().each{it.off()}
 }
 
 public stopPositionChange()
